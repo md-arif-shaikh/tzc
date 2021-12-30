@@ -60,7 +60,7 @@
 (defun tzc--get-hour (time-string)
   "Get the hour from TIME-STRING."
   (let* ((hour (decoded-time-hour (parse-time-string time-string))))
-    (if (string-search "PM" (upcase time-string))
+    (if (string-match-p "PM" (upcase time-string))
 	(+ hour 12)
       hour)))
 
@@ -94,7 +94,7 @@ Returns a list of the form `(min hour day)`."
 
 (defun tzc--get-converted-timestring (time-string from-zone to-zone)
   "Convert a given time as given in TIME-STRING from FROM-ZONE to TO-ZONE."
-  (unless (string-search ":" time-string)
+  (unless (string-match-p ":" time-string)
     (error "Seems like the time is not specified in HH:MM format.  This might lead to
 erroneous calculation.  Please use correct format for time!"))
   (let* ((to-zone-list (tzc--get-converted-time time-string from-zone to-zone))
@@ -134,7 +134,7 @@ erroneous calculation.  Please use correct format for time!"))
    (list time-string from-zone)))
   (with-current-buffer (generate-new-buffer "*tzc-times*")
     (dolist (to-zone tzc-favourite-time-zones)
-      (insert (concat (tzc--get-converted-timestring time-string from-zone to-zone) "\n")))
+      (insert (tzc--get-converted-timestring time-string from-zone to-zone) "\n"))
     (switch-to-buffer-other-window "*tzc-times*")))
 
 (provide 'tzc)
