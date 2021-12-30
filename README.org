@@ -8,6 +8,7 @@
 * How to use it
 ** Convert a time between time zones
 To convert a given ~time~ from ~from-zone~ to ~to-zone~, use the interactive function ~tzc-convert-time~.
+#+html: <div> <img src="./screenshots/convert-time.gif"></div>
 ** Convert a time from one zone to a list of favourite time zones
 You can set a list of favourite time zones using the variable ~tzc-favourite-time-zones~ and then use
 the interactive function ~tzc-convert-time-to-favourite-time-zones~ to get the time converted to your
