@@ -1,0 +1,6 @@
+#+TITLE: TZC
+#+AUTHOR: Md Arif Shaikh
+#+EMAIL: arifshaikh.astro@gmail.com
+
+* About
+~tzc~ is a small tool to convert any time from one time zone to another time zone.
