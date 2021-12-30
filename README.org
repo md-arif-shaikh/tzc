@@ -3,4 +3,12 @@
 #+EMAIL: arifshaikh.astro@gmail.com
 
 * About
-~tzc~ is a small tool to convert any time from one time zone to another time zone.
+~tzc~ is a small tool for ~Emacs~ to convert any time from one time zone to another time zone.
+
+* How to use it
+** Convert a time between time zones
+To convert a given ~time~ from ~from-zone~ to ~to-zone~, use the interactive function ~tzc-convert-time~.
+** Convert a time from one zone to a list of favourite time zones
+You can set a list of favourite time zones using the variable ~tzc-favourite-time-zones~ and then use
+the interactive function ~tzc-convert-time-to-favourite-time-zones~ to get the time converted to your
+favourite time zones.
