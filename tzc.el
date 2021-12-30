@@ -43,10 +43,18 @@
   :type 'list
   :group 'tzc)
 
-(defcustom tzc-time-zones '("Asia/Kolkata"
-			    "America/New_York"
-			    "UK/London"
-			    "Europe/Berlin")
+(defun tzc--get-time-zones ()
+  "Get list of time zones from system."
+  (let* ((main-dir)
+	 (areas)
+	 (zones '()))
+    (setq main-dir (cond ((string-equal system-type "darwin") "/usr/share/zoneinfo.default/")))
+    (setq areas '("Africa" "America" "Antarctica" "Arctic" "Asia" "Atlantic" "Australia" "Brazil" "Canada" "Chile" "Europe" "Indian" "Mexico" "Pacific" "US"))
+    (dolist (area areas)
+      (setq zones (append zones (mapcar (lambda (zone) (concat area "/" zone)) (directory-files (concat main-dir area) nil directory-files-no-dot-files-regexp)))))
+    zones))
+
+(defcustom tzc-time-zones (delete-dups (append tzc-favourite-time-zones (tzc--get-time-zones)))
   "List of time zones."
   :type 'list
   :group 'tzc)
