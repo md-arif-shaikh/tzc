@@ -114,7 +114,7 @@ erroneous calculation.  Please use correct format for time!"))
 	 (to-day-string))
     (unless (string-equal day "+0d")
       (setq to-day-string (format " %s" day)))
-    (concat time-string " " from-zone " = " to-time-string to-day-string " " to-zone)))
+    (concat to-time-string to-day-string " " to-zone)))
 
 (defun tzc--time-list (time-zone)
   "A list of times to display for completion based on TIME-ZONE."
@@ -133,7 +133,13 @@ erroneous calculation.  Please use correct format for time!"))
 	  (to-zone (completing-read "Enter To Zone: " tzc-time-zones))
 	  (time-string (completing-read "Enter time to covert: " (tzc--time-list from-zone))))
    (list time-string from-zone to-zone)))
-  (message (tzc--get-converted-timestring time-string from-zone to-zone)))
+  (message (concat time-string " " from-zone " = "  (tzc--get-converted-timestring time-string from-zone to-zone))))
+
+(defun tzc-convert-current-time (to-zone)
+  "Convert current local time to TO-ZONE."
+  (interactive (list (completing-read "Enter To Zone: " tzc-time-zones)))
+  (let ((time-now (format-time-string "%H:%M")))
+    (message (concat "Local Time " time-now " = "  (tzc--get-converted-timestring time-now nil to-zone)))))
 
 (defun tzc-convert-time-to-favourite-time-zones (time-string from-zone)
   "Convert time in TIME-STRING from FROM-ZONE to `tzc-favourite-time-zones`."
@@ -142,8 +148,22 @@ erroneous calculation.  Please use correct format for time!"))
 	  (time-string (completing-read "Enter time to covert: " (tzc--time-list from-zone))))
    (list time-string from-zone)))
   (with-current-buffer (generate-new-buffer "*tzc-times*")
+    (insert time-string " " from-zone)
     (dolist (to-zone tzc-favourite-time-zones)
-      (insert (tzc--get-converted-timestring time-string from-zone to-zone) "\n"))
+      (unless (string-equal to-zone from-zone)
+	(insert " = " (tzc--get-converted-timestring time-string from-zone to-zone) "\n")))
+    (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
+    (switch-to-buffer-other-window "*tzc-times*")))
+
+(defun tzc-convert-current-time-to-favourite-time-zones ()
+  "Convert current local time to `tzc-favourite-time-zones`."
+  (interactive)
+  (with-current-buffer (generate-new-buffer "*tzc-times*")
+    (insert "Local Time " (format-time-string "%H:%M"))
+    (dolist (to-zone tzc-favourite-time-zones)
+      (unless (string-equal to-zone nil)
+	(insert " = " (tzc--get-converted-timestring (format-time-string "%H:%M") nil to-zone) "\n")))
+    (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
     (switch-to-buffer-other-window "*tzc-times*")))
 
 (provide 'tzc)
