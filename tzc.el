@@ -64,7 +64,8 @@
 
 (defun tzc--+-p (timeshift)
   "Check if the TIMESHIFT in contain +- string."
-  (or (string-match-p "+" timeshift) (string-match-p "-" timeshift)))
+  (when (stringp timeshift)
+   (or (string-match-p "+" timeshift) (string-match-p "-" timeshift))))
 
 (defun tzc--+-position (timeshift)
   "Position of +- in a TIMESHIFT string."
