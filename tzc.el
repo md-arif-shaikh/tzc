@@ -38,7 +38,9 @@
 (defcustom tzc-favourite-time-zones '("Asia/Kolkata"
 				      "America/New_York"
 				      "UK/London"
-				      "Europe/Berlin")
+				      "Europe/Berlin"
+				      "Asia/Shanghai"
+				      "Asia/Tokyo")
   "List of favourite time zones."
   :type 'list
   :group 'tzc)
@@ -60,10 +62,31 @@
   :type 'list
   :group 'tzc)
 
+(defun tzc--+-p (timeshift)
+  "Checks if the timeshift in contains +- string."
+  (or (string-match-p "+" timeshift) (string-match-p "-" timeshift)))
+
+(defun tzc--+-position (timeshift)
+  "Position of +- in a string."
+  (or (string-match "+" timeshift) (string-match "-" timeshift)))
+
+(defun tzc--format-timeshift (timeshift)
+  "Convert a TIMESHIFT to proper format of +-HHMM."
+  (let ((timeshiftstring (substring timeshift (tzc--+-position timeshift))))
+    (cond ((= (length timeshiftstring) 3) (concat timeshiftstring "00"))
+	  ((= (length timeshiftstring) 4) (concat timeshiftstring "0"))
+	  (t timeshiftstring))))
+
 (defun tzc--get-timeshift-between-zones (from-zone to-zone)
   "Get the shift in time between FROM-ZONE and TO-ZONE."
-  (let* ((from-zone-offset (format-time-string "%z" nil from-zone))
-	 (to-zone-offset (format-time-string "%z" nil to-zone)))
+  (let* ((from-zone-offset)
+	 (to-zone-offset))
+    (setq from-zone-offset (if (tzc--+-p from-zone)
+			       (tzc--format-timeshift from-zone)
+			     (format-time-string "%z" nil from-zone)))
+    (setq to-zone-offset (if (tzc--+-p to-zone)
+			     (tzc--format-timeshift to-zone)
+			     (format-time-string "%z" nil to-zone)))
     (- (timezone-zone-to-minute to-zone-offset) (timezone-zone-to-minute from-zone-offset))))
 
 (defun tzc--get-hour (time-string)

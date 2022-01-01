@@ -6,6 +6,8 @@
 ~tzc~ is a small tool for ~Emacs~ to convert any time from one time zone to another time zone.
 - It supports tzdata database, e.g., ~America/New_York~ specifies the time zone and daylight saving time history for locations near New York City.
   For more details, see the time zone rules as described in the ~Emacs~ manual [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Time-Zone-Rules.html][here.]]
+- It also supports zone info in the form of ~+-HHMM~ / ~GM+HHMM~ / ~GMT+HHMM~. It also works if the ~timeshift~ is given upto significant places, i. e., without
+  the last digits when it is zero. For example, ~+-HH~ or ~+-HHM~ would work.
 - A list of all available zones in your system (MacOS (~darwin~) or Linux (~gnu/linux~)) is presented for autocompletion. So you can pick one easily.
 - In the unlikely case where a zone is not available in completion, you can add it to the list ~tzc-favourite-time-zones~. 
 * How to use it
@@ -16,3 +18,4 @@ To convert a given ~time~ from ~from-zone~ to ~to-zone~, use the interactive fun
 You can set a list of favourite time zones using the variable ~tzc-favourite-time-zones~ and then use
 the interactive function ~tzc-convert-time-to-favourite-time-zones~ to get the time converted to your
 favourite time zones.
+#+html: <div> <img src="./screenshots/convert-time-to-favourite-zones.gif"></div>
