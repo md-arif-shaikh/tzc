@@ -63,11 +63,11 @@
   :group 'tzc)
 
 (defun tzc--+-p (timeshift)
-  "Checks if the timeshift in contains +- string."
+  "Check if the TIMESHIFT in contain +- string."
   (or (string-match-p "+" timeshift) (string-match-p "-" timeshift)))
 
 (defun tzc--+-position (timeshift)
-  "Position of +- in a string."
+  "Position of +- in a TIMESHIFT string."
   (or (string-match "+" timeshift) (string-match "-" timeshift)))
 
 (defun tzc--format-timeshift (timeshift)
@@ -188,6 +188,38 @@ erroneous calculation.  Please use correct format for time!"))
 	(insert " = " (tzc--get-converted-timestring (format-time-string "%H:%M") nil to-zone) "\n")))
     (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
     (switch-to-buffer-other-window "*tzc-times*")))
+
+(defun tzc--get-zoneinfo-from-timestamp (timestamp)
+  "Get the zoneinfo Area/City from TIMESTAMP."
+  (string-match "[a-z]+[/][a-z]+" timestamp)
+  (match-string 0 timestamp))
+
+(defun tzc-convert-time-at-mark (to-zone)
+  "Convert time at the marked region to TO-ZONE."
+  (interactive
+   (list (completing-read "Enter To Zone:  " (tzc--get-time-zones))))
+  (let* ((timestamp (buffer-substring-no-properties (mark) (point)))
+	 (from-zone)
+	 (hour)
+	 (minute))
+    (if (not (string-match-p ":" timestamp))
+	(error "Seems like the time is not specified in HH:MM format.  This might lead to
+erroneous calculation.  Please use correct format for time!")
+      (setq hour (tzc--get-hour timestamp))
+      (setq minute (decoded-time-minute (parse-time-string timestamp))))
+    (cond ((tzc--+-p timestamp)
+	   (setq from-zone (tzc--format-timeshift timestamp)))
+	  (t (setq from-zone (tzc--get-zoneinfo-from-timestamp timestamp))))
+    (tzc-convert-time (format "%02d:%02d" hour minute) from-zone to-zone)))
+
+(defun tzc-convert-and-replace-time-at-mark (to-zone)
+  "Convert time at the marked region to TO-ZONE."
+  (interactive
+   (list (completing-read "Enter To Zone:  " (tzc--get-time-zones))))
+  (let* ((converted-time-strings (split-string (tzc-convert-time-at-mark to-zone) " = "))
+	 (converted-time (nth 1 converted-time-strings)))
+    (kill-region (mark) (point))
+    (insert converted-time)))
 
 (provide 'tzc)
 ;;; tzc.el ends here
