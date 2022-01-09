@@ -71,22 +71,22 @@
   "Position of +- in a TIMESHIFT string."
   (or (string-match "+" timeshift) (string-match "-" timeshift)))
 
-(defun tzc--format-timeshift (timeshift)
+(defun tzc--format-time-shift (timeshift)
   "Convert a TIMESHIFT to proper format of +-HHMM."
   (let ((timeshiftstring (substring timeshift (tzc--+-position timeshift))))
     (cond ((= (length timeshiftstring) 3) (concat timeshiftstring "00"))
 	  ((= (length timeshiftstring) 4) (concat timeshiftstring "0"))
 	  (t timeshiftstring))))
 
-(defun tzc--get-timeshift-between-zones (from-zone to-zone)
+(defun tzc--get-time-shift-between-zones (from-zone to-zone)
   "Get the shift in time between FROM-ZONE and TO-ZONE."
   (let* ((from-zone-offset)
 	 (to-zone-offset))
     (setq from-zone-offset (if (tzc--+-p from-zone)
-			       (tzc--format-timeshift from-zone)
+			       (tzc--format-time-shift from-zone)
 			     (format-time-string "%z" nil from-zone)))
     (setq to-zone-offset (if (tzc--+-p to-zone)
-			     (tzc--format-timeshift to-zone)
+			     (tzc--format-time-shift to-zone)
 			     (format-time-string "%z" nil to-zone)))
     (- (timezone-zone-to-minute to-zone-offset) (timezone-zone-to-minute from-zone-offset))))
 
@@ -99,11 +99,11 @@
 
 (defun tzc--get-hour-shift (from-zone to-zone)
   "Get the shift in hour between FROM-ZONE and TO-ZONE."
-  (/ (tzc--get-timeshift-between-zones from-zone to-zone) 60))
+  (/ (tzc--get-time-shift-between-zones from-zone to-zone) 60))
 
 (defun tzc--get-minute-shift (from-zone to-zone)
   "Get the shift in minute between FROM-ZONE and TO-ZONE."
-  (% (tzc--get-timeshift-between-zones from-zone to-zone) 60))
+  (% (tzc--get-time-shift-between-zones from-zone to-zone) 60))
 
 (defun tzc--get-converted-time (time-string from-zone to-zone)
   "Convert a given time as given in TIME-STRING from FROM-ZONE to TO-ZONE.
@@ -125,10 +125,10 @@ Returns a list of the form `(min hour day)`."
 				      to-zone-day "+1d")))
     (list to-zone-minute to-zone-hour to-zone-day)))
 
-(defun tzc--get-converted-timestring (time-string from-zone to-zone)
+(defun tzc--get-converted-time-string (time-string from-zone to-zone)
   "Convert a given time as given in TIME-STRING from FROM-ZONE to TO-ZONE."
   (unless (string-match-p ":" time-string)
-    (error "Seems like the time is not specified in HH:MM format.  This might lead to
+    (user-error "Seems like the time is not specified in HH:MM format.  This might lead to
 erroneous calculation.  Please use correct format for time!"))
   (let* ((to-zone-list (tzc--get-converted-time time-string from-zone to-zone))
 	 (minute (nth 0 to-zone-list))
@@ -157,13 +157,13 @@ erroneous calculation.  Please use correct format for time!"))
 	  (to-zone (completing-read "Enter To Zone: " tzc-time-zones))
 	  (time-string (completing-read "Enter time to covert: " (tzc--time-list from-zone))))
    (list time-string from-zone to-zone)))
-  (message (concat time-string " " from-zone " = "  (tzc--get-converted-timestring time-string from-zone to-zone))))
+  (message (concat time-string " " from-zone " = "  (tzc--get-converted-time-string time-string from-zone to-zone))))
 
 (defun tzc-convert-current-time (to-zone)
   "Convert current local time to TO-ZONE."
   (interactive (list (completing-read "Enter To Zone: " tzc-time-zones)))
   (let ((time-now (format-time-string "%H:%M")))
-    (message (concat "Local Time " time-now " = "  (tzc--get-converted-timestring time-now nil to-zone)))))
+    (message (concat "Local Time " time-now " = "  (tzc--get-converted-time-string time-now nil to-zone)))))
 
 (defun tzc-convert-time-to-favourite-time-zones (time-string from-zone)
   "Convert time in TIME-STRING from FROM-ZONE to `tzc-favourite-time-zones`."
@@ -175,7 +175,7 @@ erroneous calculation.  Please use correct format for time!"))
     (insert time-string " " from-zone)
     (dolist (to-zone tzc-favourite-time-zones)
       (unless (string-equal to-zone from-zone)
-	(insert " = " (tzc--get-converted-timestring time-string from-zone to-zone) "\n")))
+	(insert " = " (tzc--get-converted-time-string time-string from-zone to-zone) "\n")))
     (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
     (switch-to-buffer-other-window "*tzc-times*")))
 
@@ -186,11 +186,11 @@ erroneous calculation.  Please use correct format for time!"))
     (insert "Local Time " (format-time-string "%H:%M"))
     (dolist (to-zone tzc-favourite-time-zones)
       (unless (string-equal to-zone nil)
-	(insert " = " (tzc--get-converted-timestring (format-time-string "%H:%M") nil to-zone) "\n")))
+	(insert " = " (tzc--get-converted-time-string (format-time-string "%H:%M") nil to-zone) "\n")))
     (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
     (switch-to-buffer-other-window "*tzc-times*")))
 
-(defun tzc--get-zoneinfo-from-timestamp (timestamp)
+(defun tzc--get-zoneinfo-from-time-stamp (timestamp)
   "Get the zoneinfo Area/City from TIMESTAMP."
   (string-match "[a-z]+[/][a-z]+" timestamp)
   (match-string 0 timestamp))
@@ -204,13 +204,13 @@ erroneous calculation.  Please use correct format for time!"))
 	 (hour)
 	 (minute))
     (if (not (string-match-p ":" timestamp))
-	(error "Seems like the time is not specified in HH:MM format.  This might lead to
+	(user-error "Seems like the time is not specified in HH:MM format.  This might lead to
 erroneous calculation.  Please use correct format for time!")
       (setq hour (tzc--get-hour timestamp))
       (setq minute (decoded-time-minute (parse-time-string timestamp))))
     (cond ((tzc--+-p timestamp)
-	   (setq from-zone (tzc--format-timeshift timestamp)))
-	  (t (setq from-zone (tzc--get-zoneinfo-from-timestamp timestamp))))
+	   (setq from-zone (tzc--format-time-shift timestamp)))
+	  (t (setq from-zone (tzc--get-zoneinfo-from-time-stamp timestamp))))
     (tzc-convert-time (format "%02d:%02d" hour minute) from-zone to-zone)))
 
 (defun tzc-convert-and-replace-time-at-mark (to-zone)
