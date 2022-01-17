@@ -2,8 +2,11 @@
 #+AUTHOR: Md Arif Shaikh
 #+EMAIL: arifshaikh.astro@gmail.com
 
+#+html: <div> <img alt="GitHub" src="https://img.shields.io/github/license/md-arif-shaikh/tzc"> <a href="https://melpa.org/#/tzc"><img alt="MELPA" src="https://melpa.org/packages/tzc-badge.svg"/></a> </div>
 * Table of Contents :TOC:
 - [[#about][About]]
+- [[#installation][Installation]]
+- [[#customization][Customization]]
 - [[#how-to-use-it][How to use it]]
   - [[#convert-a-time-between-time-zones][Convert a time between time zones]]
   - [[#convert-a-time-from-one-zone-to-a-list-of-favourite-time-zones][Convert a time from one zone to a list of favourite time zones]]
@@ -17,7 +20,18 @@
   the last digits when it is zero. For example, ~+-HH~ or ~+-HHM~ would work. For example instead of ~Asia/Kolkata~ one can use ~UTC+0530~ or
   ~UTC+053~ or ~GM+0530~ or ~GM+053~ and so on.
 - A list of all available zones in your system (MacOS (~darwin~) or Linux (~gnu/linux~)) is presented for autocompletion. So you can pick one easily.
-- In the unlikely case where a zone is not available in completion, you can add it to the list ~tzc-favourite-time-zones~. 
+- In the unlikely case where a zone is not available in completion, you can add it to the list ~tzc-favourite-time-zones~.
+* Installation
+`tzc` is available in [[https://melpa.org/#/tzc][MELPA]]. See the instructions [[https://melpa.org/#/getting-started][here]] on how to install a [[https://melpa.org/#/tzc][MELPA]] package. If you use `use-package` then the following would work
+#+BEGIN_SRC emacs-lisp
+  (use-package tzc
+    :ensure t)
+#+END_SRC
+* Customization
+You can customize `tzc-favourite-time-zones` to set your favourite `time-zones`
+#+BEGIN_SRC emacs-lisp
+  (setq tzc-favourite-time-zones '("Asia/Kolkata" "America/New_York"))
+#+END_SRC
 * How to use it
 ** Convert a time between time zones
 To convert a given ~time~ from ~from-zone~ to ~to-zone~, use the interactive function ~tzc-convert-time~.
