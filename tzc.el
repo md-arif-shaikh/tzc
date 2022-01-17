@@ -45,16 +45,22 @@
   :type 'list
   :group 'tzc)
 
+(defcustom tzc-main-dir (cond ((string-equal system-type "darwin") "/usr/share/zoneinfo.default/")
+			      ((string-equal system-type "gnu/linux") "/usr/share/zoneinfo/"))
+  "Main directory to look for the zoneinfo data on your system"
+  :type 'string
+  :group 'tzc)
+
+(defcustom tzc-areas '("Africa" "America" "Antarctica" "Arctic" "Asia" "Atlantic" "Australia" "Brazil" "Canada" "Chile" "Europe" "Indian" "Mexico" "Pacific" "US")
+  "Areas to look for the timezone info"
+  :type 'list
+  :group 'tzc)
+
 (defun tzc--get-time-zones ()
   "Get list of time zones from system."
-  (let* ((main-dir)
-	 (areas)
-	 (zones '()))
-    (setq main-dir (cond ((string-equal system-type "darwin") "/usr/share/zoneinfo.default/")
-			 ((string-equal system-type "gnu/linux") "/usr/share/zoneinfo/")))
-    (setq areas '("Africa" "America" "Antarctica" "Arctic" "Asia" "Atlantic" "Australia" "Brazil" "Canada" "Chile" "Europe" "Indian" "Mexico" "Pacific" "US"))
-    (dolist (area areas)
-      (setq zones (append zones (mapcar (lambda (zone) (concat area "/" zone)) (directory-files (concat main-dir area) nil directory-files-no-dot-files-regexp)))))
+  (let* ((zones '()))
+    (dolist (area tzc-areas)
+      (setq zones (append zones (mapcar (lambda (zone) (concat area "/" zone)) (directory-files (concat tzc-main-dir area) nil directory-files-no-dot-files-regexp)))))
     zones))
 
 (defcustom tzc-time-zones (delete-dups (append tzc-favourite-time-zones (tzc--get-time-zones)))
@@ -78,16 +84,16 @@
 	  ((= (length timeshiftstring) 4) (concat timeshiftstring "0"))
 	  (t timeshiftstring))))
 
+(defun tzc--get-offset (time-zone)
+  "Get the time offset for TIME-ZONE."
+  (if (tzc--+-p time-zone)
+      (tzc--format-time-shift time-zone)
+    (format-time-string "%z" nil time-zone)))
+
 (defun tzc--get-time-shift-between-zones (from-zone to-zone)
   "Get the shift in time between FROM-ZONE and TO-ZONE."
-  (let* ((from-zone-offset)
-	 (to-zone-offset))
-    (setq from-zone-offset (if (tzc--+-p from-zone)
-			       (tzc--format-time-shift from-zone)
-			     (format-time-string "%z" nil from-zone)))
-    (setq to-zone-offset (if (tzc--+-p to-zone)
-			     (tzc--format-time-shift to-zone)
-			     (format-time-string "%z" nil to-zone)))
+  (let* ((from-zone-offset (tzc--get-offset from-zone))
+	 (to-zone-offset (tzc--get-offset to-zone)))
     (- (timezone-zone-to-minute to-zone-offset) (timezone-zone-to-minute from-zone-offset))))
 
 (defun tzc--get-hour (time-string)
@@ -154,8 +160,8 @@ erroneous calculation.  Please use correct format for time!"))
   "Convert a given time as given in TIME-STRING from FROM-ZONE to TO-ZONE."
   (interactive
    (let* ((from-zone (completing-read "Enter From Zone: " tzc-time-zones))
-	  (to-zone (completing-read "Enter To Zone: " tzc-time-zones))
-	  (time-string (completing-read "Enter time to covert: " (tzc--time-list from-zone))))
+	  (to-zone (completing-read (format "Convert time from %s to: " from-zone) tzc-time-zones))
+	  (time-string (completing-read (format "Enter time to covert from %s to %s: " from-zone to-zone) (tzc--time-list from-zone))))
    (list time-string from-zone to-zone)))
   (message (concat time-string " " from-zone " = "  (tzc--get-converted-time-string time-string from-zone to-zone))))
 
