@@ -35,7 +35,8 @@
 ;;; Code:
 (require 'timezone)
 
-(defcustom tzc-favourite-time-zones '("Asia/Kolkata"
+(defcustom tzc-favourite-time-zones '("UTC+0000"
+				      "Asia/Kolkata"
 				      "America/New_York"
 				      "UK/London"
 				      "Europe/Berlin"
