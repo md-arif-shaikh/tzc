@@ -30,21 +30,32 @@
 ;; time-zone to a list of favourite time-zones.
 ;;
 ;; A list of favourite time zones could be set using like following
-;; (setq tzc-favourite-time-zones '("Asia/Kolkata" "America/New_York" "Europe/Berlin"))
+;; (setq tzc-favourite-time-zones-alist '(("Asia/Kolkata" "Kolkata") ("America/New_York" "New York") ("Europe/Berlin" "Berlin")))
 
 ;;; Code:
 (require 'timezone)
 
-(defcustom tzc-favourite-time-zones '("UTC+0000"
-				      "Asia/Kolkata"
-				      "America/New_York"
-				      "UK/London"
-				      "Europe/Berlin"
-				      "Asia/Shanghai"
-				      "Asia/Tokyo")
-  "List of favourite time zones."
-  :type 'list
+
+(defcustom tzc-favourite-time-zones-alist '(("UTC+0000" "UTC")
+					    ("Asia/Kolkata" "Kolkata")
+					    ("America/New_York" "New York")
+					    ("UK/London" "London")
+					    ("Europe/Berlin" "Berlin")
+					    ("Asia/Shanghai" "Shanghai")
+					    ("Asia/Tokyo" "Tokyo"))
+  "Alist for favourite time zones containing timezone and label."
+  :type '(repeat (list string string))
   :group 'tzc)
+
+(defun tzc--favourite-time-zones ()
+  "Get the list of favourite time zones."
+  (mapcar #'car tzc-favourite-time-zones-alist))
+
+(defun tzc--get-time-zone-label (time-zone)
+  "Get the label for the TIME-ZONE."
+  (if (member time-zone (tzc--favourite-time-zones))
+      (nth 1 (assoc time-zone tzc-favourite-time-zones-alist))
+    time-zone))
 
 (defcustom tzc-main-dir (cond ((string-equal system-type "darwin") "/usr/share/zoneinfo.default/")
 			      ((string-equal system-type "gnu/linux") "/usr/share/zoneinfo/"))
@@ -64,7 +75,7 @@
       (setq zones (append zones (mapcar (lambda (zone) (concat area "/" zone)) (directory-files (concat tzc-main-dir area) nil directory-files-no-dot-files-regexp)))))
     zones))
 
-(defcustom tzc-time-zones (delete-dups (append tzc-favourite-time-zones (tzc--get-time-zones)))
+(defcustom tzc-time-zones (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))
   "List of time zones."
   :type 'list
   :group 'tzc)
@@ -145,7 +156,7 @@ erroneous calculation.  Please use correct format for time!"))
 	 (to-day-string))
     (unless (string-equal day "+0d")
       (setq to-day-string (format " %s" day)))
-    (concat to-time-string to-day-string " " to-zone)))
+    (concat to-time-string to-day-string)))
 
 (defun tzc--time-list (time-zone)
   "A list of times to display for completion based on TIME-ZONE."
@@ -164,36 +175,35 @@ erroneous calculation.  Please use correct format for time!"))
 	  (to-zone (completing-read (format "Convert time from %s to: " from-zone) tzc-time-zones))
 	  (time-string (completing-read (format "Enter time to covert from %s to %s: " from-zone to-zone) (tzc--time-list from-zone))))
    (list time-string from-zone to-zone)))
-  (message (concat time-string " " from-zone " = "  (tzc--get-converted-time-string time-string from-zone to-zone))))
+  (message (concat time-string " " (tzc--get-time-zone-label from-zone) " = "  (tzc--get-converted-time-string time-string from-zone to-zone) " " (tzc--get-time-zone-label to-zone))))
 
 (defun tzc-convert-current-time (to-zone)
   "Convert current local time to TO-ZONE."
   (interactive (list (completing-read "Enter To Zone: " tzc-time-zones)))
   (let ((time-now (format-time-string "%H:%M")))
-    (message (concat "Local Time " time-now " = "  (tzc--get-converted-time-string time-now nil to-zone)))))
+    (message (concat "Local Time " time-now " = "  (tzc--get-converted-time-string time-now nil to-zone) " " (tzc--get-time-zone-label to-zone)))))
 
 (defun tzc-convert-time-to-favourite-time-zones (time-string from-zone)
-  "Convert time in TIME-STRING from FROM-ZONE to `tzc-favourite-time-zones`."
+  "Convert time in TIME-STRING from FROM-ZONE to `(tzc--favourite-time-zones)`."
   (interactive
    (let* ((from-zone (completing-read "Enter From Zone: " tzc-time-zones))
 	  (time-string (completing-read "Enter time to covert: " (tzc--time-list from-zone))))
    (list time-string from-zone)))
   (with-current-buffer (generate-new-buffer "*tzc-times*")
-    (insert time-string " " from-zone)
-    (dolist (to-zone tzc-favourite-time-zones)
+    (insert time-string " " (tzc--get-time-zone-label from-zone))
+    (dolist (to-zone (tzc--favourite-time-zones))
       (unless (string-equal to-zone from-zone)
-	(insert " = " (tzc--get-converted-time-string time-string from-zone to-zone) "\n")))
+	(insert " = " (tzc--get-converted-time-string time-string from-zone to-zone) " " (tzc--get-time-zone-label to-zone) "\n")))
     (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
     (switch-to-buffer-other-window "*tzc-times*")))
 
 (defun tzc-convert-current-time-to-favourite-time-zones ()
-  "Convert current local time to `tzc-favourite-time-zones`."
+  "Convert current local time to `(tzc--favourite-time-zones)`."
   (interactive)
   (with-current-buffer (generate-new-buffer "*tzc-times*")
-    (insert "Local Time " (format-time-string "%H:%M"))
-    (dolist (to-zone tzc-favourite-time-zones)
+    (dolist (to-zone (tzc--favourite-time-zones))
       (unless (string-equal to-zone nil)
-	(insert " = " (tzc--get-converted-time-string (format-time-string "%H:%M") nil to-zone) "\n")))
+	(insert (tzc--get-converted-time-string (format-time-string "%H:%M") nil to-zone) " " (tzc--get-time-zone-label to-zone) "\n")))
     (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
     (switch-to-buffer-other-window "*tzc-times*")))
 

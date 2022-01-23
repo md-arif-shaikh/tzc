@@ -28,9 +28,15 @@
     :ensure t)
 #+END_SRC
 * Customization
-You can customize ~tzc-favourite-time-zones~ to set your favourite ~time-zones~
+You can customize ~tzc-favourite-time-zones-alist~ to set your favourite ~time-zones~ and ~labels~
 #+BEGIN_SRC emacs-lisp
-  (setq tzc-favourite-time-zones '("Asia/Kolkata" "America/New_York"))
+  (setq tzc-favourite-time-zones-alist '(("UTC+0000" "UTC")
+					 ("Asia/Kolkata" "Kolkata")
+					 ("America/New_York" "New York")
+					 ("UK/London" "London")
+					 ("Europe/Berlin" "Berlin")
+					 ("Asia/Shanghai" "Shanghai")
+					 ("Asia/Tokyo" "Tokyo")))
 #+END_SRC
 * How to use it
 ** Convert a time between time zones
