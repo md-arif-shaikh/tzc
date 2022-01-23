@@ -34,6 +34,7 @@
 
 ;;; Code:
 (require 'timezone)
+(require 'subr-x)
 
 (defvar tzc-color--time-zone-label "#98C379"
   "Color to indicate a time zone label.")
@@ -79,12 +80,12 @@
 
 (defcustom tzc-main-dir (cond ((string-equal system-type "darwin") "/usr/share/zoneinfo.default/")
 			      ((string-equal system-type "gnu/linux") "/usr/share/zoneinfo/"))
-  "Main directory to look for the zoneinfo data on your system"
+  "Main directory to look for the zoneinfo data on your system."
   :type 'string
   :group 'tzc)
 
 (defcustom tzc-areas '("Africa" "America" "Antarctica" "Arctic" "Asia" "Atlantic" "Australia" "Brazil" "Canada" "Chile" "Europe" "Indian" "Mexico" "Pacific" "US")
-  "Areas to look for the timezone info"
+  "Areas to look for the timezone info."
   :type 'list
   :group 'tzc)
 
