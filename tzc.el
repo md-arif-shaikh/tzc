@@ -35,10 +35,30 @@
 ;;; Code:
 (require 'timezone)
 
+(defvar tzc-color--time-zone-label "#98C379"
+  "Color to indicate a time zone label.")
+(defvar tzc-color--time-string "#56B6C2"
+  "Color to indicate a time string.")
 
-(defcustom tzc-favourite-time-zones-alist '(("UTC+0000" "UTC")
-					    ("Asia/Kolkata" "Kolkata")
-					    ("America/New_York" "New York")
+(defface tzc-face-time-zone-label
+  `((t :foreground ,tzc-color--time-zone-label
+       :weight extra-bold
+       :box nil
+       :underline nil))
+  "Face for time zone label."
+  :group 'tzc-face)
+
+(defface tzc-face-time-string
+  `((t :foreground ,tzc-color--time-string
+       :weight extra-bold
+       :box nil
+       :underline nil))
+  "Face for time string."
+  :group 'tzc-face)
+
+(defcustom tzc-favourite-time-zones-alist '(("Asia/Kolkata" "Kolkata")
+					    ("UTC+0000" "UTC")
+					    ("America/New_York" "New_York")
 					    ("UK/London" "London")
 					    ("Europe/Berlin" "Berlin")
 					    ("Asia/Shanghai" "Shanghai")
@@ -78,6 +98,11 @@
 (defcustom tzc-time-zones (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))
   "List of time zones."
   :type 'list
+  :group 'tzc)
+
+(defcustom tzc-world-clock-buffer-name "*tzc-wclock*"
+  "Name of the `tzc-world-clock' buffer."
+  :type 'string
   :group 'tzc)
 
 (defun tzc--+-p (timeshift)
@@ -200,12 +225,12 @@ erroneous calculation.  Please use correct format for time!"))
 (defun tzc-convert-current-time-to-favourite-time-zones ()
   "Convert current local time to `(tzc--favourite-time-zones)`."
   (interactive)
-  (with-current-buffer (generate-new-buffer "*tzc-times*")
+  (with-current-buffer (generate-new-buffer tzc-world-clock-buffer-name)
     (dolist (to-zone (tzc--favourite-time-zones))
       (unless (string-equal to-zone nil)
 	(insert (tzc--get-converted-time-string (format-time-string "%H:%M") nil to-zone) " " (tzc--get-time-zone-label to-zone) "\n")))
     (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
-    (switch-to-buffer-other-window "*tzc-times*")))
+    (switch-to-buffer-other-window tzc-world-clock-buffer-name)))
 
 (defun tzc--get-zoneinfo-from-time-stamp (timestamp)
   "Get the zoneinfo Area/City from TIMESTAMP."
@@ -238,6 +263,83 @@ erroneous calculation.  Please use correct format for time!")
 	 (converted-time (nth 1 converted-time-strings)))
     (kill-region (mark) (point))
     (insert converted-time)))
+
+(define-derived-mode tzc-world-clock-mode special-mode "tzc world clock"
+  "Major mode for buffer that displays times in various time zones.
+See `tzc-world-clock'."
+  :interactive nil
+  (setq-local revert-buffer-function #'tzc-world-clock-update)
+  (setq show-trailing-whitespace nil))
+
+(defun tzc-world-clock-update (&optional _arg _noconfirm)
+  "Update the `tzc-world-clock' buffer."
+  (when (get-buffer tzc-world-clock-buffer-name)
+    (with-current-buffer (get-buffer tzc-world-clock-buffer-name)
+      (let ((inhibit-read-only t)
+	    (op (point)))
+        (erase-buffer)
+        (dolist (to-zone (tzc--favourite-time-zones))
+	  (unless (string-equal to-zone nil)
+	    (insert (propertize (tzc--get-time-zone-label to-zone) 'face 'tzc-face-time-zone-label) " " (propertize (tzc--get-converted-time-string (format-time-string "%H:%M") nil to-zone) 'face 'tzc-face-time-string) "\n")))
+	(align-regexp (point-min) (point-max) "\\(\\s-*\\) ")
+        (goto-char op)))))
+
+(defun tzc-world-clock-previous/next (previous-or-next)
+    "Get the `tzc-world-clock' buffer for PREVIOUS-OR-NEXT hour."
+  (when (get-buffer tzc-world-clock-buffer-name)
+    (with-current-buffer (get-buffer tzc-world-clock-buffer-name)
+      (let* ((inhibit-read-only t)
+	     (first-line)
+	     (time-zone-list)
+	     (time)
+	     (hour-now)
+	     (hour-previous/next)
+	     (zone))
+	(goto-char (point-min))
+	(setq first-line (thing-at-point 'line))
+	(setq time-zone-list (split-string first-line))
+	(setq time (nth 1 time-zone-list))
+	(setq hour-now (string-to-number (substring time 0 2)))
+	(setq hour-previous/next (if (string-equal previous-or-next "previous")
+				     (1- hour-now)
+				   (1+ hour-now)))
+	(cond ((>= hour-previous/next 24) (setq hour-previous/next (- hour-previous/next 24)))
+	      ((< hour-previous/next 0) (setq hour-previous/next (+ hour-previous/next 24))))
+	(setq zone (car (car tzc-favourite-time-zones-alist)))
+        (erase-buffer)
+        (dolist (to-zone (tzc--favourite-time-zones))
+	  (unless (string-equal to-zone nil)
+	    (insert  (propertize (tzc--get-time-zone-label to-zone) 'face 'tzc-face-time-zone-label) " " (propertize (tzc--get-converted-time-string (format "%s:00" hour-previous/next) zone to-zone) 'face 'tzc-face-time-string) "\n")))
+	(align-regexp (point-min) (point-max) "\\(\\s-*\\) ")))))
+
+(defun tzc-world-clock-previous ()
+  "Get the `tzc-world-clock` for the previous hour."
+  (interactive)
+  (tzc-world-clock-previous/next "previous"))
+
+(defun tzc-world-clock-next ()
+  "Get the `tzc-world-clock` for the next hour."
+  (interactive)
+  (tzc-world-clock-previous/next "next"))
+
+(defvar tzc-world-clock-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "n" #'tzc-world-clock-next)
+    (define-key map "p" #'tzc-world-clock-previous)
+    map))
+
+;;;###autoload
+(defun tzc-world-clock ()
+  "Display a world clock buffer with times in various time zones."
+  (interactive)
+  (if-let ((buffer (get-buffer tzc-world-clock-buffer-name)))
+      (pop-to-buffer buffer)
+    (pop-to-buffer tzc-world-clock-buffer-name)
+    (dolist (to-zone (tzc--favourite-time-zones))
+      (unless (string-equal to-zone nil)
+	(insert (propertize (tzc--get-time-zone-label to-zone) 'face 'tzc-face-time-zone-label) " " (propertize (tzc--get-converted-time-string (format-time-string "%H:%M") nil to-zone) 'face 'tzc-face-time-string) "\n")))
+    (align-regexp (point-min) (point-max) "\\(\\s-*\\) "))
+  (tzc-world-clock-mode))
 
 (provide 'tzc)
 ;;; tzc.el ends here
