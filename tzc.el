@@ -285,6 +285,7 @@ See `tzc-world-clock'."
 	(align-regexp (point-min) (point-max) "\\(\\s-*\\) ")
         (goto-char op)))))
 
+;;;###autoload
 (defun tzc-world-clock-previous-or-next (previous-or-next)
     "Get the `tzc-world-clock' buffer for PREVIOUS-OR-NEXT hour."
   (when (get-buffer tzc-world-clock-buffer-name)
@@ -313,16 +314,19 @@ See `tzc-world-clock'."
 	    (insert  (propertize (tzc--get-time-zone-label to-zone) 'face 'tzc-face-time-zone-label) " " (propertize (tzc--get-converted-time-string (format "%s:00" hour-previous-or-next) zone to-zone) 'face 'tzc-face-time-string) "\n")))
 	(align-regexp (point-min) (point-max) "\\(\\s-*\\) ")))))
 
+;;;###autoload
 (defun tzc-world-clock-previous ()
   "Get the `tzc-world-clock` for the previous hour."
   (interactive)
   (tzc-world-clock-previous-or-next "previous"))
 
+;;;###autoload
 (defun tzc-world-clock-next ()
   "Get the `tzc-world-clock` for the next hour."
   (interactive)
   (tzc-world-clock-previous-or-next "next"))
 
+;;;###autoload
 (defvar tzc-world-clock-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "n" #'tzc-world-clock-next)
