@@ -284,7 +284,7 @@ See `tzc-world-clock'."
 	(align-regexp (point-min) (point-max) "\\(\\s-*\\) ")
         (goto-char op)))))
 
-(defun tzc-world-clock-previous/next (previous-or-next)
+(defun tzc-world-clock-previous-or-next (previous-or-next)
     "Get the `tzc-world-clock' buffer for PREVIOUS-OR-NEXT hour."
   (when (get-buffer tzc-world-clock-buffer-name)
     (with-current-buffer (get-buffer tzc-world-clock-buffer-name)
@@ -293,34 +293,34 @@ See `tzc-world-clock'."
 	     (time-zone-list)
 	     (time)
 	     (hour-now)
-	     (hour-previous/next)
+	     (hour-previous-or-next)
 	     (zone))
 	(goto-char (point-min))
 	(setq first-line (thing-at-point 'line))
 	(setq time-zone-list (split-string first-line))
 	(setq time (nth 1 time-zone-list))
 	(setq hour-now (string-to-number (substring time 0 2)))
-	(setq hour-previous/next (if (string-equal previous-or-next "previous")
+	(setq hour-previous-or-next (if (string-equal previous-or-next "previous")
 				     (1- hour-now)
 				   (1+ hour-now)))
-	(cond ((>= hour-previous/next 24) (setq hour-previous/next (- hour-previous/next 24)))
-	      ((< hour-previous/next 0) (setq hour-previous/next (+ hour-previous/next 24))))
+	(cond ((>= hour-previous-or-next 24) (setq hour-previous-or-next (- hour-previous-or-next 24)))
+	      ((< hour-previous-or-next 0) (setq hour-previous-or-next (+ hour-previous-or-next 24))))
 	(setq zone (car (car tzc-favourite-time-zones-alist)))
         (erase-buffer)
         (dolist (to-zone (tzc--favourite-time-zones))
 	  (unless (string-equal to-zone nil)
-	    (insert  (propertize (tzc--get-time-zone-label to-zone) 'face 'tzc-face-time-zone-label) " " (propertize (tzc--get-converted-time-string (format "%s:00" hour-previous/next) zone to-zone) 'face 'tzc-face-time-string) "\n")))
+	    (insert  (propertize (tzc--get-time-zone-label to-zone) 'face 'tzc-face-time-zone-label) " " (propertize (tzc--get-converted-time-string (format "%s:00" hour-previous-or-next) zone to-zone) 'face 'tzc-face-time-string) "\n")))
 	(align-regexp (point-min) (point-max) "\\(\\s-*\\) ")))))
 
 (defun tzc-world-clock-previous ()
   "Get the `tzc-world-clock` for the previous hour."
   (interactive)
-  (tzc-world-clock-previous/next "previous"))
+  (tzc-world-clock-previous-or-next "previous"))
 
 (defun tzc-world-clock-next ()
   "Get the `tzc-world-clock` for the next hour."
   (interactive)
-  (tzc-world-clock-previous/next "next"))
+  (tzc-world-clock-previous-or-next "next"))
 
 (defvar tzc-world-clock-mode-map
   (let ((map (make-sparse-keymap)))
