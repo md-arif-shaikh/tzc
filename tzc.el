@@ -180,7 +180,9 @@ Returns a list of the form `(min hour day)`."
     (list to-zone-minute to-zone-hour to-zone-day)))
 
 (defun tzc--get-converted-time-string (time-string from-zone to-zone &optional use-date)
-  "Convert a given time as given in TIME-STRING from FROM-ZONE to TO-ZONE."
+  "Convert a given time as given in TIME-STRING from FROM-ZONE to TO-ZONE.
+If USE-DATE is non-nil then the full date and day is shown,
+otherwise only relative information is shown."
   (unless (string-match-p ":" time-string)
     (user-error "Seems like the time is not specified in HH:MM format.  This might lead to
 erroneous calculation.  Please use correct format for time!"))
