@@ -66,7 +66,7 @@
        :weight extra-bold
        :box nil
        :underline nil))
-  "Face for time string."
+  "Face for date string."
   :group 'tzc-face)
 
 (defface tzc-face-offset-string
@@ -74,7 +74,7 @@
        :weight extra-bold
        :box nil
        :underline nil))
-  "Face for time string."
+  "Face for offset string."
   :group 'tzc-face)
 
 (defcustom tzc-use-date-in-world-clock t
