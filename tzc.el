@@ -109,9 +109,11 @@
 
 (defun tzc--get-time-zone-label (time-zone)
   "Get the label for the TIME-ZONE."
-  (if (member time-zone (tzc--favourite-time-zones))
-      (nth 1 (assoc time-zone tzc-favourite-time-zones-alist))
-    time-zone))
+  (cond ((member time-zone (tzc--favourite-time-zones))
+	 (nth 1 (assoc time-zone tzc-favourite-time-zones-alist)))
+	((string-match-p "/" time-zone)
+	 (nth 1 (split-string time-zone "/")))
+	(t time-zone)))
 
 (defcustom tzc-main-dir (cond ((string-equal system-type "darwin") "/usr/share/zoneinfo.default/")
 			      ((string-equal system-type "gnu/linux") "/usr/share/zoneinfo/"))
@@ -248,7 +250,10 @@ erroneous calculation.  Please use correct format for time!"))
 	  (to-zone (completing-read (format "Convert time from %s to: " from-zone) tzc-time-zones))
 	  (time-string (completing-read (format "Enter time to covert from %s to %s: " from-zone to-zone) (tzc--time-list from-zone))))
    (list time-string from-zone to-zone)))
-  (message (concat (propertize time-string 'face 'tzc-face-time-string) " " (tzc--get-time-zone-label from-zone) " = "  (tzc--get-converted-time-string time-string from-zone to-zone tzc-use-date-in-convert-time) " " (tzc--get-time-zone-label to-zone))))
+  (message (concat (propertize time-string 'face 'tzc-face-time-string) " "
+		   (propertize (tzc--get-time-zone-label from-zone) 'face 'tzc-face-time-zone-label) " = "
+		   (tzc--get-converted-time-string time-string from-zone to-zone tzc-use-date-in-convert-time) " "
+		   (propertize (tzc--get-time-zone-label to-zone) 'face 'tzc-face-time-zone-label))))
 
 (defun tzc-convert-current-time (to-zone)
   "Convert current local time to TO-ZONE."
