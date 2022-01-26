@@ -218,7 +218,7 @@ erroneous calculation.  Please use correct format for time!"))
 	 (day (nth 2 to-zone-list))
 	 (to-time-string (format "%02d:%02d" hour minute))
 	 (to-day-string "")
-	 (offset-string))
+	 (offset-string ""))
     (if use-date
 	(setq to-day-string (format-time-string " %a %d %B %Y" (time-add (current-time) (days-to-time day))))
       (setq to-day-string (cond
@@ -248,7 +248,7 @@ erroneous calculation.  Please use correct format for time!"))
 	  (to-zone (completing-read (format "Convert time from %s to: " from-zone) tzc-time-zones))
 	  (time-string (completing-read (format "Enter time to covert from %s to %s: " from-zone to-zone) (tzc--time-list from-zone))))
    (list time-string from-zone to-zone)))
-  (message (concat time-string " " (tzc--get-time-zone-label from-zone) " = "  (tzc--get-converted-time-string time-string from-zone to-zone tzc-use-date-in-convert-time) " " (tzc--get-time-zone-label to-zone))))
+  (message (concat (propertize time-string 'face 'tzc-face-time-string) " " (tzc--get-time-zone-label from-zone) " = "  (tzc--get-converted-time-string time-string from-zone to-zone tzc-use-date-in-convert-time) " " (tzc--get-time-zone-label to-zone))))
 
 (defun tzc-convert-current-time (to-zone)
   "Convert current local time to TO-ZONE."
