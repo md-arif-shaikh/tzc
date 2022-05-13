@@ -95,7 +95,7 @@
 (defcustom tzc-favourite-time-zones-alist '(("Asia/Kolkata" "Kolkata")
 					    ("UTC+0000" "UTC")
 					    ("America/New_York" "New_York")
-					    ("UK/London" "London")
+					    ("Europe/London" "London")
 					    ("Europe/Berlin" "Berlin")
 					    ("Asia/Shanghai" "Shanghai")
 					    ("Asia/Tokyo" "Tokyo"))
@@ -403,6 +403,16 @@ See `tzc-world-clock'."
 	(insert (propertize (tzc--get-time-zone-label to-zone) 'face 'tzc-face-time-zone-label) " " (tzc--get-converted-time-string (format-time-string "%H:%M") nil to-zone tzc-use-date-in-world-clock tzc-use-offset-in-world-clock) "\n")))
     (align-regexp (point-min) (point-max) "\\(\\s-*\\) "))
   (tzc-world-clock-mode))
+
+(defun tzc-check-time-zone (time-zone)
+  "Check info for TIME-ZONE."
+  (interactive "sEnter Time Zone: ")
+  (if (member time-zone (tzc--get-time-zones))
+      (progn
+	(let* ((name (tzc--get-time-zone-label time-zone))
+	       (offset (tzc--get-offset time-zone)))
+	  (message "%s %s" name offset)))
+    (message "%s is not a recognized time zone name." time-zone)))
 
 (provide 'tzc)
 ;;; tzc.el ends here
