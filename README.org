@@ -34,7 +34,7 @@ You can customize ~tzc-favourite-time-zones-alist~ to set your favourite ~time-z
   (setq tzc-favourite-time-zones-alist '(("UTC+0000" "UTC")
 					 ("Asia/Kolkata" "Kolkata")
 					 ("America/New_York" "New York")
-					 ("UK/London" "London")
+					 ("Europe/London" "London")
 					 ("Europe/Berlin" "Berlin")
 					 ("Asia/Shanghai" "Shanghai")
 					 ("Asia/Tokyo" "Tokyo")))
