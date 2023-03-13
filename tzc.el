@@ -35,6 +35,7 @@
 ;;; Code:
 (require 'timezone)
 (require 'subr-x)
+(require 'org)
 
 (defvar tzc-color--time-zone-label "#98C379"
   "Color to indicate a time zone label.")
@@ -209,7 +210,7 @@ Returns a list of the form `(min hour day)`."
 (defun tzc--get-converted-time-string (time-string from-zone to-zone &optional use-date use-offset)
   "Convert a given time as given in TIME-STRING from FROM-ZONE to TO-ZONE.
 If USE-DATE is non-nil then the full date and day is shown,
-otherwise only relative information is shown. If USE-OFFSET is non-nil
+otherwise only relative information is shown.  If USE-OFFSET is non-nil
 then offset will be displayed."
   (unless (string-match-p ":" time-string)
     (user-error "Seems like the time is not specified in HH:MM format.  This might lead to
@@ -287,8 +288,8 @@ erroneous calculation.  Please use correct format for time!"))
 
 (defun tzc--get-zoneinfo-from-time-stamp (timestamp)
   "Get the zoneinfo Area/City from TIMESTAMP."
-  (string-match "[a-z]+[/][a-z]+" timestamp)
-  (match-string 0 timestamp))
+  (when (string-match "[a-z]+[/][a-z]+" timestamp)
+    (match-string 0 timestamp)))
 
 (defun tzc-convert-time-at-mark (to-zone)
   "Convert time at the marked region to TO-ZONE."
@@ -413,6 +414,42 @@ See `tzc-world-clock'."
 	       (offset (tzc--get-offset time-zone)))
 	  (message "%s %s" name offset)))
     (message "%s is not a recognized time zone name." time-zone)))
+
+;;;; convert org time-stamp
+(defun tzc-convert-org-time-stamp-at-mark (to-zone)
+  "Convert `org-time-stamp` at the marked region to TO-ZONE."
+  (interactive
+   (list (completing-read "Enter To Zone:  " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
+  (let* ((timestamp (buffer-substring-no-properties (mark) (point)))
+	 (from-zone-exists-p (tzc--get-zoneinfo-from-time-stamp timestamp))
+	 (from-zone (if from-zone-exists-p
+			from-zone-exists-p
+		      (completing-read "No Time Zone info found in the time stamp. Enter Time Zone of the current time stamp in Area/City format:  " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
+	 (parsed-time (org-parse-time-string timestamp))
+	 (minute (nth 1 parsed-time))
+	 (hour (nth 2 parsed-time))
+	 (day (nth 3 parsed-time))
+	 (month (nth 4 parsed-time))
+	 (year (nth 5 parsed-time))
+	 (converted-time (tzc--get-converted-time (format "%02d:%02d" hour minute) from-zone to-zone))
+	 (converted-min (nth 0 converted-time))
+	 (converted-hour (nth 1 converted-time))
+	 (converted-day)
+	 (day-shift (nth 2 converted-time))
+	 (shift (cond ((equal day-shift 1) "++1")
+		      ((equal day-shift -1) "--1")
+		      (t "++0")))
+	 (converted-date (org-read-date nil nil shift nil (org-time-string-to-time (format "%02d-%02d-%02d" year month day)))))
+    (setq converted-day (format-time-string "%a" (org-time-string-to-time converted-date)))
+    (message (format "<%s %s %02d:%02d %s>" converted-date converted-day converted-hour converted-min to-zone))))
+
+(defun tzc-convert-and-replace-org-time-stamp-at-mark (to-zone)
+  "Convert `org-time-stamp` at the marked region to TO-ZONE."
+  (interactive
+   (list (completing-read "Enter To Zone:  " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
+  (let* ((converted-time-stamp (tzc-convert-org-time-stamp-at-mark to-zone)))
+    (kill-region (mark) (point))
+    (insert converted-time-stamp)))
 
 (provide 'tzc)
 ;;; tzc.el ends here
