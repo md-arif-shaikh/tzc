@@ -441,7 +441,8 @@ See `tzc-world-clock'."
 		      (t "++0")))
 	 (converted-date (org-read-date nil nil shift nil (org-time-string-to-time (format "%02d-%02d-%02d" year month day)))))
     (setq converted-day (format-time-string "%a" (org-time-string-to-time converted-date)))
-    (message "<%s %s %02d:%02d %s>" converted-date converted-day converted-hour converted-min to-zone)))
+    (message "<%s %s %02d:%02d%s>" converted-date converted-day converted-hour converted-min
+	     (if from-zone-exists-p (concat " " to-zone) ""))))
 
 (defun tzc-convert-and-replace-org-time-stamp-at-mark (to-zone)
   "Convert `org-time-stamp` at the marked region to TO-ZONE."
