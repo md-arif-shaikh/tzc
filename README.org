@@ -11,6 +11,7 @@
   - [[#convert-a-time-between-time-zones][Convert a time between time zones]]
   - [[#convert-a-time-from-one-zone-to-a-list-of-favourite-time-zones][Convert a time from one zone to a list of favourite time zones]]
   - [[#convert-and-replace-time-at-mark][Convert and replace time at mark]]
+  - [[#convert-org-time-stamp][Convert org time stamp]]
   - [[#world-clock][World clock]]
 
 * About
@@ -50,6 +51,8 @@ favourite time zones.
 #+html: <div> <img src="./screenshots/convert-time-to-favourite-zones.gif"></div>
 ** Convert and replace time at mark
 #+html: <div> <img src="./screenshots/convert-and-replace-time-at-mark.gif"></div>
+** Convert org time stamp
+#+html: <div> <img src="./screenshots/convert-org-time-stamp.gif"></div>
 ** World clock
 ~tzc-world-clock~ is similar to ~world-clock~ but with the extra feature that with ~n~ (next) or ~p~ ("previous") key it will change the information on the buffer for the next or previous hours. Pressing ~g~ reverts it back to the current time.
 #+html: <div> <img src="./screenshots/tzc-world-clock.gif"></div>
