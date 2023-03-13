@@ -439,10 +439,16 @@ See `tzc-world-clock'."
 	 (shift (cond ((equal day-shift 1) "++1")
 		      ((equal day-shift -1) "--1")
 		      (t "++0")))
-	 (converted-date (org-read-date nil nil shift nil (org-time-string-to-time (format "%02d-%02d-%02d" year month day)))))
+	 (converted-date (org-read-date nil nil shift nil (org-time-string-to-time (format "%02d-%02d-%02d" year month day))))
+	 (start-bracket (cond ((string-match-p "<" timestamp) "<")
+			      ((string-match-p "\\[" timestamp) "[")
+			      (t "")))
+	 (end-bracket (cond ((string-match-p ">" timestamp) ">")
+			    ((string-match-p "\\]" timestamp) "]")
+			    (t ""))))
     (setq converted-day (format-time-string "%a" (org-time-string-to-time converted-date)))
-    (message "<%s %s %02d:%02d%s>" converted-date converted-day converted-hour converted-min
-	     (if from-zone-exists-p (concat " " to-zone) ""))))
+    (message "%s%s %s %02d:%02d%s%s" start-bracket converted-date converted-day converted-hour converted-min
+	     (if from-zone-exists-p (concat " " to-zone) "") end-bracket)))
 
 (defun tzc-convert-and-replace-org-time-stamp-at-mark (to-zone)
   "Convert `org-time-stamp` at the marked region to TO-ZONE."
