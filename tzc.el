@@ -122,7 +122,7 @@
   :type 'string
   :group 'tzc)
 
-(defcustom tzc-areas '("Africa" "America" "Antarctica" "Arctic" "Asia" "Atlantic" "Australia" "Brazil" "Canada" "Chile" "Europe" "Indian" "Mexico" "Pacific" "US")
+(defcustom tzc-areas '("Africa" "America" "Antarctica" "Arctic" "Asia" "Atlantic" "Australia" "Canada" "Chile" "Europe" "Indian" "Mexico" "Pacific" "US")
   "Areas to look for the timezone info."
   :type 'list
   :group 'tzc)
@@ -321,7 +321,7 @@ erroneous calculation.  Please use correct format for time!")
       (setq hour (tzc--get-hour timestamp))
       (setq minute (decoded-time-minute parsed-list)))
     (when (not (string-match-p "\d{4}-\d{2}-\d{2}" timestamp))
-      (setq timestamp (format "%s %s" (format-time-string "%Y-%m-%d") timestamp))
+      (setq timestamp (format "%s %s" (format-time-string "%F") timestamp))
       (setq parsed-list (parse-time-string timestamp)))
       (setq day (decoded-time-day parsed-list))
       (setq month (decoded-time-month parsed-list))
