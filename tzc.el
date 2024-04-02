@@ -122,7 +122,7 @@
   :type 'string
   :group 'tzc)
 
-(defcustom tzc-areas '("Africa" "America" "Antarctica" "Arctic" "Asia" "Atlantic" "Australia" "Canada" "Chile" "Europe" "Indian" "Mexico" "Pacific" "US")
+(defcustom tzc-areas '("Africa" "America" "Antarctica" "Arctic" "Asia" "Atlantic" "Australia" "Brazil" "Canada" "Chile" "Europe" "Indian" "Mexico" "Pacific" "US")
   "Areas to look for the timezone info."
   :type 'list
   :group 'tzc)
@@ -131,7 +131,9 @@
   "Get list of time zones from system."
   (let* ((zones '()))
     (dolist (area tzc-areas)
-      (setq zones (append zones (mapcar (lambda (zone) (concat area "/" zone)) (directory-files (concat tzc-main-dir area) nil directory-files-no-dot-files-regexp)))))
+      (let ((dir-path (concat tzc-main-dir area)))
+	(when (file-exists-p dir-path)
+	  (setq zones (append zones (mapcar (lambda (zone) (concat area "/" zone)) (directory-files dir-path nil directory-files-no-dot-files-regexp)))))))
     zones))
 
 (defcustom tzc-time-zones (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))
@@ -164,7 +166,7 @@
   "Get the time offset for TIME-ZONE on a given DATE."
   (if (tzc--+-p time-zone)
       (tzc--format-time-shift time-zone)
-    (format-time-string "%z" (org-read-date nil t date) time-zone)))
+    (format-time-string "%z" (org-read-date nil t (or date (format-time-string "%F"))) time-zone)))
 
 (defun tzc--get-time-shift-between-zones (from-zone to-zone &optional from-date)
   "Get the shift in time between FROM-ZONE and TO-ZONE.
