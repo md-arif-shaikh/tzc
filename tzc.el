@@ -144,11 +144,6 @@
   :type 'string
   :group 'tzc)
 
-(defun tzc--+-p (timeshift)
-  "Check if the TIMESHIFT in contain +- string."
-  (when (stringp timeshift)
-   (or (string-match-p "+" timeshift) (string-match-p "-" timeshift))))
-
 (defun tzc--+-position (timeshift)
   "Position of +- in a TIMESHIFT string."
   (or (string-match "+" timeshift) (string-match "-" timeshift)))
@@ -160,11 +155,16 @@
 	  ((= (length timeshiftstring) 4) (concat timeshiftstring "0"))
 	  (t timeshiftstring))))
 
+(defun tzc--+-p (timeshift)
+  "Check if the TIMESHIFT in contain +- string."
+  (when (stringp timeshift)
+    (or (string-match-p "+\d{4}" timeshift) (string-match-p "-\d{4}" timeshift))))
+
 (defun tzc--get-offset (time-zone &optional date)
   "Get the time offset for TIME-ZONE on a given DATE."
   (if (tzc--+-p time-zone)
       (tzc--format-time-shift time-zone)
-    (format-time-string "%z" (org-read-date nil t date nil) time-zone)))
+    (format-time-string "%z" (org-read-date nil t date) time-zone)))
 
 (defun tzc--get-time-shift-between-zones (from-zone to-zone &optional from-date)
   "Get the shift in time between FROM-ZONE and TO-ZONE.
@@ -319,14 +319,17 @@ Optionally on a given FROM-DATE."
 	(user-error "Seems like the time is not specified in HH:MM format.  This might lead to
 erroneous calculation.  Please use correct format for time!")
       (setq hour (tzc--get-hour timestamp))
-      (setq minute (decoded-time-minute parsed-list))
+      (setq minute (decoded-time-minute parsed-list)))
+    (when (not (string-match-p "\d{4}-\d{2}-\d{2}" timestamp))
+      (setq timestamp (format "%s %s" (format-time-string "%Y-%m-%d") timestamp))
+      (setq parsed-list (parse-time-string timestamp)))
       (setq day (decoded-time-day parsed-list))
       (setq month (decoded-time-month parsed-list))
-      (setq year (decoded-time-year parsed-list)))
+      (setq year (decoded-time-year parsed-list))
     (cond ((tzc--+-p timestamp)
 	   (setq from-zone (tzc--format-time-shift timestamp)))
 	  (t (setq from-zone (tzc--get-zoneinfo-from-time-stamp timestamp))))
-    (tzc-convert-time (format "%02d:%02d" hour minute) from-zone to-zone (format "%04d-%02d-%2d" year month day))))
+    (tzc-convert-time (format "%02d:%02d" hour minute) from-zone to-zone (format "%04d-%02d-%02d" year month day))))
 
 (defun tzc-convert-and-replace-time-at-mark (to-zone)
   "Convert time at the marked region to TO-ZONE."
