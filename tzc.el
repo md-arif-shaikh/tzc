@@ -274,17 +274,19 @@ Optionally on a given FROM-DATE."
     (message (concat "Local Time " time-now " = "  (tzc--get-converted-time-string time-now nil to-zone tzc-use-date-in-convert-time) " " (tzc--get-time-zone-label to-zone)))))
 
 ;;;###autoload
-(defun tzc-convert-time-to-favourite-time-zones (time-string from-zone)
-  "Convert time in TIME-STRING from FROM-ZONE to `(tzc--favourite-time-zones)`."
+(defun tzc-convert-time-to-favourite-time-zones (time-string from-zone from-date)
+  "Convert time in TIME-STRING from FROM-ZONE to `(tzc--favourite-time-zones)`.
+The conversion is computed for the given FROM-DATE."
   (interactive
    (let* ((from-zone (completing-read "Enter From Zone: " tzc-time-zones))
-	  (time-string (completing-read "Enter time to covert: " (tzc--time-list from-zone))))
-   (list time-string from-zone)))
+	  (time-string (completing-read "Enter time to covert: " (tzc--time-list from-zone)))
+	  (from-date (org-read-date nil nil nil "Enter date to compute the conversion on: ")))
+   (list time-string from-zone from-date)))
   (with-current-buffer (generate-new-buffer "*tzc-times*")
-    (insert time-string " " (tzc--get-time-zone-label from-zone))
+    (insert (propertize time-string 'face 'tzc-face-time-string) " " (propertize (tzc--get-time-zone-label from-zone) 'face 'tzc-face-time-zone-label) " on " (propertize from-date 'face 'tzc-face-date-string))
     (dolist (to-zone (tzc--favourite-time-zones))
       (unless (string-equal to-zone from-zone)
-	(insert " = " (tzc--get-converted-time-string time-string from-zone to-zone) " " (tzc--get-time-zone-label to-zone) "\n")))
+	(insert " = " (tzc--get-converted-time-string time-string from-zone to-zone tzc-use-date-in-convert-time tzc-use-offset-in-world-clock from-date) " " (propertize (tzc--get-time-zone-label to-zone) 'face 'tzc-face-time-zone-label) "\n")))
     (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
     (switch-to-buffer-other-window "*tzc-times*")))
 
