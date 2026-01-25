@@ -110,11 +110,13 @@
 
 (defun tzc--get-time-zone-label (time-zone)
   "Get the label for the TIME-ZONE."
-  (cond ((member time-zone (tzc--favourite-time-zones))
-	 (nth 1 (assoc time-zone tzc-favourite-time-zones-alist)))
-	((string-match-p "/" time-zone)
-	 (string-replace "_" " " (nth 1 (split-string time-zone "/"))))
-	(t time-zone)))
+  (cond
+   ((null time-zone) "Local Time")
+   ((member time-zone (tzc--favourite-time-zones))
+    (nth 1 (assoc time-zone tzc-favourite-time-zones-alist)))
+   ((string-match-p "/" time-zone)
+    (string-replace "_" " " (nth 1 (split-string time-zone "/"))))
+   (t time-zone)))
 
 (defcustom tzc-main-dir (cond ((string-equal system-type "darwin") "/usr/share/zoneinfo.default/")
 			      ((string-equal system-type "gnu/linux") "/usr/share/zoneinfo/"))
