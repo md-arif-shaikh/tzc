@@ -30,12 +30,14 @@
 ;; time-zone to a list of favourite time-zones.
 ;;
 ;; A list of favourite time zones could be set using like following
-;; (setq tzc-favourite-time-zones-alist '(("Asia/Kolkata" "Kolkata") ("America/New_York" "New York") ("Europe/Berlin" "Berlin")))
+;; (setq tzc-favourite-time-zones-alist '(("Asia/Kolkata" "Kolkata")
+;; ("America/New_York" "New York") ("Europe/Berlin" "Berlin")))
 
 ;;; Code:
 (require 'timezone)
 (require 'subr-x)
 (require 'org)
+(require 'org-element)
 
 (defvar tzc-color--time-zone-label "#98C379"
   "Color to indicate a time zone label.")
@@ -116,20 +118,6 @@
            (< (string-distance target a)
               (string-distance target b))))))
 
-(defun tzc--get-time-zone-label (time-zone)
-  "Get the label for the TIME-ZONE."
-  (cond
-   ((null time-zone) "Local Time")
-   ((member time-zone (tzc--favourite-time-zones))
-    (nth 1 (assoc time-zone tzc-favourite-time-zones-alist)))
-   ((string-match-p "\\`[A-Za-z]+\\'" time-zone)
-    (user-error "%s is not a valid timezone. Should be in the format Area/City." time-zone))
-   ((string-match-p "/" time-zone)
-    (if (member time-zone tzc-time-zones)
-	(string-replace "_" " " (nth 1 (split-string time-zone "/")))
-      (user-error "%s is not a recognized timezone. Perhaps looking for %s?" time-zone
-		  (tzc--closest-string time-zone tzc-time-zones))))
-   (t time-zone)))
 
 (defcustom tzc-main-dir (cond ((string-equal system-type "darwin") "/usr/share/zoneinfo.default/")
 			      ((string-equal system-type "gnu/linux") "/usr/share/zoneinfo/"))
@@ -139,7 +127,7 @@
 
 (defcustom tzc-areas '("Africa" "America" "Antarctica" "Arctic" "Asia" "Atlantic" "Australia" "Brazil" "Canada" "Chile" "Europe" "Indian" "Mexico" "Pacific" "US")
   "Areas to look for the timezone info."
-  :type 'list
+  :type '(repeat string)
   :group 'tzc)
 
 (defun tzc--get-time-zones ()
@@ -153,8 +141,23 @@
 
 (defcustom tzc-time-zones (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))
   "List of time zones."
-  :type 'list
+  :type '(repeat string)
   :group 'tzc)
+
+(defun tzc--get-time-zone-label (time-zone)
+  "Get the label for the TIME-ZONE."
+  (cond
+   ((null time-zone) "Local Time")
+   ((member time-zone (tzc--favourite-time-zones))
+    (nth 1 (assoc time-zone tzc-favourite-time-zones-alist)))
+   ((string-match-p "\\`[A-Za-z]+\\'" time-zone)
+    (user-error "%s is not a valid timezone. Should be in the format Area/City!" time-zone))
+   ((string-match-p "/" time-zone)
+    (if (member time-zone tzc-time-zones)
+	(string-replace "_" " " (nth 1 (split-string time-zone "/")))
+      (user-error "%s is not a recognized timezone. Perhaps looking for %s!" time-zone
+		  (tzc--closest-string time-zone tzc-time-zones))))
+   (t time-zone)))
 
 (defcustom tzc-world-clock-buffer-name "*tzc-wclock*"
   "Name of the `tzc-world-clock' buffer."
@@ -321,10 +324,10 @@ The conversion is computed for the given FROM-DATE."
   (let* ((time-zone))
     (setq time-zone (if (string-match "[a-z]+[/][a-z]+" timestamp)
 			(match-string 0 timestamp)
-		      (user-error "Timezone not in Area/City format.")))
+		      (user-error "Timezone not in Area/City format!")))
     (if (member time-zone tzc-time-zones)
 	time-zone
-      (user-error "%s is not a valid timezone. Perhaps looking for %s" time-zone
+      (user-error "%s is not a valid timezone. Perhaps looking for %s?" time-zone
 		  (tzc--closest-string time-zone tzc-time-zones)))))
 
 (defun tzc--get-timestamp-at-point ()
@@ -345,7 +348,7 @@ The conversion is computed for the given FROM-DATE."
   (interactive
    (list (completing-read "Enter To Zone:  " (tzc--get-time-zones))))
   (let* ((timestamp (or (tzc--get-timestamp-at-point)
-                        (error "No timestamp found at point")))
+                        (error "No timestamp found at point!")))
 	 (parsed-list (parse-time-string timestamp))
 	 (from-zone)
 	 (hour)
@@ -374,10 +377,8 @@ erroneous calculation.  Please use correct format for time!")
   (interactive
    (list (completing-read "Enter To Zone:  " (tzc--get-time-zones))))
   (unless (org-at-timestamp-p t)
-    (user-error "No Org timestamp at point"))
-  (let* ((timestamp (or (tzc--get-timestamp-at-point)
-                        (error "No timestamp found at point")))
-         (beg (org-element-property :begin (org-element-context)))
+    (user-error "No Org timestamp at point!"))
+  (let* ((beg (org-element-property :begin (org-element-context)))
          (end (org-element-property :end (org-element-context))))
     (let* ((converted-time-strings
 	    (split-string (tzc-convert-time-at-mark to-zone) " = "))
@@ -490,7 +491,7 @@ See `tzc-world-clock'."
   (interactive
    (list (completing-read "Enter To Zone:  " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
   (let* ((timestamp (or (tzc--find-org-timestamp-at-point)
-                        (error "No org timestamp found at point")))
+                        (error "No org timestamp found at point!")))
 	 (from-zone-exists-p (tzc--get-zoneinfo-from-time-stamp timestamp))
 	 (from-zone (if from-zone-exists-p
 			from-zone-exists-p
@@ -526,12 +527,9 @@ See `tzc-world-clock'."
   (interactive
    (list (completing-read "Enter To Zone:  " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
   (unless (org-at-timestamp-p t)
-    (user-error "No Org timestamp at point"))
-  (let* ((timestamp (or (tzc--find-org-timestamp-at-point)
-                        (error "No org timestamp found at point")))
-	 (beg (org-element-property :begin (org-element-context)))
+    (user-error "No Org timestamp at point!"))
+  (let* ((beg (org-element-property :begin (org-element-context)))
 	 (end (org-element-property :end (org-element-context))))
-    (message "%s %s %s" timestamp beg end)
     (let* ((converted-time-stamp (tzc-convert-org-time-stamp-at-mark to-zone)))
       (delete-region beg end)
       (insert converted-time-stamp))))
