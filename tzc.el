@@ -108,6 +108,14 @@
   "Get the list of favourite time zones."
   (mapcar #'car tzc-favourite-time-zones-alist))
 
+(defun tzc--closest-string (target candidates)
+  "Return closest string in CANDIDATES to TARGET."
+  (car
+   (sort candidates
+         (lambda (a b)
+           (< (string-distance target a)
+              (string-distance target b))))))
+
 (defun tzc--get-time-zone-label (time-zone)
   "Get the label for the TIME-ZONE."
   (cond
@@ -115,7 +123,10 @@
    ((member time-zone (tzc--favourite-time-zones))
     (nth 1 (assoc time-zone tzc-favourite-time-zones-alist)))
    ((string-match-p "/" time-zone)
-    (string-replace "_" " " (nth 1 (split-string time-zone "/"))))
+    (if (member time-zone tzc-time-zones)
+	(string-replace "_" " " (nth 1 (split-string time-zone "/")))
+      (user-error "%s is not a recognized timezone. Perhaps looking for %s?" time-zone
+		  (tzc--closest-string time-zone tzc-time-zones))))
    (t time-zone)))
 
 (defcustom tzc-main-dir (cond ((string-equal system-type "darwin") "/usr/share/zoneinfo.default/")
@@ -305,8 +316,13 @@ The conversion is computed for the given FROM-DATE."
 
 (defun tzc--get-zoneinfo-from-time-stamp (timestamp)
   "Get the zoneinfo Area/City from TIMESTAMP."
-  (when (string-match "[a-z]+[/][a-z]+" timestamp)
-    (match-string 0 timestamp)))
+  (let* ((time-zone))
+    (setq time-zone (when (string-match "[a-z]+[/][a-z]+" timestamp)
+		      (match-string 0 timestamp)))
+    (if (member time-zone tzc-time-zones)
+	time-zone
+      (user-error "%s is not a valid timezone. Perhaps looking for %s" time-zone
+		  (tzc--closest-string time-zone tzc-time-zones)))))
 
 (defun tzc--get-timestamp-at-point ()
   "Extract timestamp at point."
