@@ -122,6 +122,8 @@
    ((null time-zone) "Local Time")
    ((member time-zone (tzc--favourite-time-zones))
     (nth 1 (assoc time-zone tzc-favourite-time-zones-alist)))
+   ((string-match-p "\\`[A-Za-z]+\\'" time-zone)
+    (user-error "%s is not a valid timezone. Should be in the format Area/City." time-zone))
    ((string-match-p "/" time-zone)
     (if (member time-zone tzc-time-zones)
 	(string-replace "_" " " (nth 1 (split-string time-zone "/")))
@@ -265,7 +267,7 @@ erroneous calculation.  Please use correct format for time!"))
     (append (cons time-now time-list-after) time-list-before)))
 
 ;;;###autoload
-(defun tzc-convert-time (time-string from-zone to-zone from-date)
+(defun tzc-convert-time (time-string from-zone to-zone &optional from-date)
   "Convert a given time as given in TIME-STRING from FROM-ZONE to TO-ZONE.
 Optionally on a given FROM-DATE."
   (interactive
@@ -317,8 +319,9 @@ The conversion is computed for the given FROM-DATE."
 (defun tzc--get-zoneinfo-from-time-stamp (timestamp)
   "Get the zoneinfo Area/City from TIMESTAMP."
   (let* ((time-zone))
-    (setq time-zone (when (string-match "[a-z]+[/][a-z]+" timestamp)
-		      (match-string 0 timestamp)))
+    (setq time-zone (if (string-match "[a-z]+[/][a-z]+" timestamp)
+			(match-string 0 timestamp)
+		      (user-error "Timezone not in Area/City format.")))
     (if (member time-zone tzc-time-zones)
 	time-zone
       (user-error "%s is not a valid timezone. Perhaps looking for %s" time-zone
