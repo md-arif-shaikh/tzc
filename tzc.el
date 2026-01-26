@@ -322,8 +322,7 @@ The conversion is computed for the given FROM-DATE."
 
 ;;;###autoload
 (defun tzc-convert-time-at-mark (to-zone)
-  "Convert time at point to TO-ZONE.
-Works with timestamps anywhere the cursor is positioned within them."
+  "Convert time at point to TO-ZONE."
   (interactive
    (list (completing-read "Enter To Zone:  " (tzc--get-time-zones))))
   (let* ((timestamp (or (tzc--get-timestamp-at-point)
