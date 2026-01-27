@@ -12,3 +12,14 @@
   (should (equal (mapcar (lambda (timestamp) (tzc-convert-org-time-stamp timestamp "Asia/Kolkata"))
 			 (list "<2024-02-25 9:00 America/Los_Angeles>" "<2024-03-15 9:00 America/Los_Angeles>"))
 		 (list "<2024-02-25 Sun 22:30 Asia/Kolkata>" "<2024-03-15 Fri 21:30 Asia/Kolkata>"))))
+
+(ert-deftest tzc-test-timestamp-convesion-plus ()
+  (should (equal (mapcar (lambda (timestamp) (tzc-convert-org-time-stamp timestamp "+0530"))
+			 (list "<2024-02-25 9:00 America/Los_Angeles>" "<2024-03-15 9:00 America/Los_Angeles>"))
+		 (list "<2024-02-25 Sun 22:30 +0530>" "<2024-03-15 Fri 21:30 +0530>"))))
+
+(ert-deftest tzc-test-timestamp-conversion-kolkata-seoul ()
+  (should (equal (tzc-convert-org-time-stamp "<2025-01-15 10:00 Asia/Kolkata>" "Asia/Seoul") "<2025-01-15 Wed 13:30 Asia/Seoul>")))
+
+(ert-deftest tzc-test-timestamp-conversion-kolkata-seoul-plus ()
+  (should (equal (tzc-convert-org-time-stamp "<2025-01-15 10:00 +0530>" "Asia/Seoul") "<2025-01-15 Wed 13:30 Asia/Seoul>")))
