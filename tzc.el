@@ -150,11 +150,11 @@
    ((member time-zone (tzc--favourite-time-zones))
     (nth 1 (assoc time-zone tzc-favourite-time-zones-alist)))
    ((string-match-p "\\`[A-Za-z]+\\'" time-zone)
-    (user-error "%s is not a valid timezone. Should be in the format Area/City!" time-zone))
+    (user-error "%s is not a valid timezone.  Should be in the format Area/City!" time-zone))
    ((string-match-p "/" time-zone)
     (if (member time-zone tzc-time-zones)
 	(string-replace "_" " " (nth 1 (split-string time-zone "/")))
-      (user-error "%s is not a recognized timezone. Perhaps looking for %s!" time-zone
+      (user-error "%s is not a recognized timezone.  Perhaps looking for %s!" time-zone
 		  (tzc--closest-string time-zone tzc-time-zones))))
    (t time-zone)))
 
@@ -177,7 +177,7 @@
 (defun tzc--+-p (timeshift)
   "Check if the TIMESHIFT in contain +- string."
   (when (stringp timeshift)
-    (or (string-match-p "+\d{4}" timeshift) (string-match-p "-\d{4}" timeshift))))
+    (string-match-p "\\`\\(?:[A-Z]+\\)?[-+][0-9]\\{2,4\\}\\'" timeshift)))
 
 (defun tzc--get-offset (time-zone &optional date)
   "Get the time offset for TIME-ZONE on a given DATE."
@@ -318,16 +318,32 @@ The conversion is computed for the given FROM-DATE."
     (align-regexp (point-min) (point-max) "\\(\\s-*\\)=")
     (switch-to-buffer-other-window tzc-world-clock-buffer-name)))
 
+(defun tzc--time-zone-format-error ()
+"Error message to display for invalid timezone format."
+(user-error
+ "Invalid timezone format.
+Use Area/City (e.g. Europe/London) or an offset such as UTC+0530 or GMT-0400!"))
+
+(defun tzc--extract-timezone (timestamp)
+  "Return timezone token from Org TIMESTAMP, or nil."
+  (when (string-match "\\s-+\\([^ >]+\\)>\\'" timestamp)
+    (match-string 1 timestamp)))
+
 (defun tzc--get-zoneinfo-from-time-stamp (timestamp)
-  "Get the zoneinfo Area/City from TIMESTAMP."
-  (let* ((time-zone))
-    (setq time-zone (if (string-match "[a-zA-Z]+/[a-zA-Z_]+" timestamp)
-			(match-string 0 timestamp)
-		      (user-error "Timezone not in Area/City format!")))
-    (if (member time-zone tzc-time-zones)
-	time-zone
-      (user-error "%s is not a valid timezone. Perhaps looking for %s?" time-zone
-		  (tzc--closest-string time-zone tzc-time-zones)))))
+  "Get the zoneinfo from TIMESTAMP."
+  (let ((tz (tzc--extract-timezone timestamp)))
+    (cond
+     ((null tz) nil)
+     ((string-match-p "\\`[A-Za-z]+/[A-Za-z_]+\\'" tz)
+      (if (member tz tzc-time-zones)
+          tz
+        (user-error "%s is not a valid timezone.  Perhaps looking for %s?"
+                    tz (tzc--closest-string tz tzc-time-zones))))
+     ((string-match-p "\\`\\(?:[A-Z]+\\)?[-+][0-9]\\{2,4\\}\\'" tz)
+      tz)
+     ((string-match-p "\\`[A-Z]\\{2,5\\}\\'" tz)
+      (tzc--time-zone-format-error))
+     (t (tzc--time-zone-format-error)))))
 
 (defun tzc--get-timestamp-at-point ()
   "Get timestamp at point."
