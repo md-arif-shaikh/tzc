@@ -325,7 +325,6 @@ The conversion is computed for the given FROM-DATE."
     (setq time-zone (if (string-match "[a-zA-Z]+/[a-zA-Z_]+" timestamp)
 			(match-string 0 timestamp)
 		      (user-error "Timezone not in Area/City format!")))
-    (message "%s" time-zone)
     (if (member time-zone tzc-time-zones)
 	time-zone
       (user-error "%s is not a valid timezone. Perhaps looking for %s?" time-zone
