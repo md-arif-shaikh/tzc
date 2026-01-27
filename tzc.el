@@ -37,7 +37,6 @@
 (require 'timezone)
 (require 'subr-x)
 (require 'org)
-(require 'org-element)
 
 (defvar tzc-color--time-zone-label "#98C379"
   "Color to indicate a time zone label.")
