@@ -331,23 +331,31 @@ The conversion is computed for the given FROM-DATE."
 		  (tzc--closest-string time-zone tzc-time-zones)))))
 
 (defun tzc--get-timestamp-at-point ()
-  "Extract timestamp at point."
-  (let* ((element (org-element-context))
-         (type (org-element-type element)))
-    (if (eq type 'timestamp)
-        (org-element-property :raw-value element)
-      nil)))
-
-(defun tzc--find-org-timestamp-at-point ()
-  "Extract org timestamp at point."
-  (tzc--get-timestamp-at-point))
+  "Get timestamp at point."
+  (let ((origin (point)))
+    (save-excursion
+      (or
+       ;; just before '<', start of the timestamp
+       (when (looking-at "<\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}[^>\n]*\\)>")
+         (list (match-string 0) (match-beginning 0) (match-end 0)))
+       ;; somewhere inside the timestamp
+       (when
+	   (re-search-backward "<[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}"
+			       (line-beginning-position) t)
+         (if (looking-at "<\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}[^>\n]*\\)>")
+             (if (>= (match-end 0) origin)
+                 (list (buffer-substring-no-properties (match-beginning 0) (match-end 0))
+		       (match-beginning 0)
+		       (match-end 0))
+               nil)
+           nil))))))
 
 ;;;###autoload
 (defun tzc-convert-time-at-mark (to-zone)
   "Convert time at point to TO-ZONE."
   (interactive
    (list (completing-read "Enter To Zone:  " (tzc--get-time-zones))))
-  (let* ((timestamp (or (tzc--get-timestamp-at-point)
+  (let* ((timestamp (or (nth 0 (tzc--get-timestamp-at-point))
                         (error "No timestamp found at point!")))
 	 (parsed-list (parse-time-string timestamp))
 	 (from-zone)
@@ -376,10 +384,13 @@ erroneous calculation.  Please use correct format for time!")
   "Convert time at point to TO-ZONE and replace it."
   (interactive
    (list (completing-read "Enter To Zone:  " (tzc--get-time-zones))))
-  (unless (org-at-timestamp-p t)
-    (user-error "No Org timestamp at point!"))
-  (let* ((beg (org-element-property :begin (org-element-context)))
-         (end (org-element-property :end (org-element-context))))
+  (let* ((timestamp-details (tzc--get-timestamp-at-point))
+	 (beg)
+	 (end))
+    (if timestamp-details
+	(setq beg (nth 1 timestamp-details)
+	      end (nth 2 timestamp-details))
+      (user-error "No org timestamp found at point!"))
     (let* ((converted-time-strings
 	    (split-string (tzc-convert-time-at-mark to-zone) " = "))
            (converted-time (nth 1 converted-time-strings)))
@@ -526,7 +537,7 @@ See `tzc-world-clock'."
   "Convert `org-time-stamp` at point to TO-ZONE."
   (interactive
    (list (completing-read "Enter To Zone:  " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
-  (let* ((timestamp (or (tzc--find-org-timestamp-at-point)
+  (let* ((timestamp (or (nth 0 (tzc--get-timestamp-at-point))
                         (error "No org timestamp found at point!"))))
     (tzc-convert-org-time-stamp timestamp to-zone)))
 
@@ -535,11 +546,16 @@ See `tzc-world-clock'."
   "Convert `org-time-stamp` at point to TO-ZONE and replace it."
   (interactive
    (list (completing-read "Enter To Zone:  " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
-  (unless (org-at-timestamp-p t)
-    (user-error "No Org timestamp at point!"))
-  (let* ((beg (org-element-property :begin (org-element-context)))
-	 (end (org-element-property :end (org-element-context))))
-    (let* ((converted-time-stamp (tzc-convert-org-time-stamp-at-mark to-zone)))
+  (let* ((timestamp-details (tzc--get-timestamp-at-point))
+	 (timestamp)
+	 (beg)
+	 (end))
+    (if timestamp-details
+	(setq timestamp (nth 0 timestamp-details)
+	      beg (nth 1 timestamp-details)
+	      end (nth 2 timestamp-details))
+      (user-error "No org timestamp found at point!"))
+    (let* ((converted-time-stamp (tzc-convert-org-time-stamp timestamp to-zone)))
       (delete-region beg end)
       (insert converted-time-stamp))))
 
