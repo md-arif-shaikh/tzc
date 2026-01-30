@@ -37,6 +37,7 @@
 (require 'timezone)
 (require 'subr-x)
 (require 'org)
+(require 'org-element)
 
 (defvar tzc-color--time-zone-label "#98C379"
   "Color to indicate a time zone label.")
@@ -346,24 +347,27 @@ Use Area/City (e.g. Europe/London) or an offset such as UTC+0530 or GMT-0400!"))
      (t (tzc--time-zone-format-error)))))
 
 (defun tzc--get-timestamp-at-point ()
-  "Get timestamp at point."
-  (let ((origin (point)))
-    (save-excursion
-      (or
-       ;; just before '<', start of the timestamp
-       (when (looking-at "<\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}[^>\n]*\\)>")
-         (list (match-string 0) (match-beginning 0) (match-end 0)))
-       ;; somewhere inside the timestamp
-       (when
-	   (re-search-backward "<[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}"
-			       (line-beginning-position) t)
-         (if (looking-at "<\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}[^>\n]*\\)>")
-             (if (>= (match-end 0) origin)
-                 (list (buffer-substring-no-properties (match-beginning 0) (match-end 0))
-		       (match-beginning 0)
-		       (match-end 0))
-               nil)
-           nil))))))
+  "Return Org timestamp at point as (STRING BEGIN END)."
+  (let* ((pos (point))
+         (ctx (org-element-context))
+         ts)
+    ;; Case 1: real timestamp element
+    (setq ts (org-element-lineage ctx '(timestamp) t))
+
+    ;; Case 2: planning timestamps — choose by point location
+    (when (and (null ts)
+               (eq (org-element-type ctx) 'planning))
+      (dolist (prop '(:scheduled :deadline :closed))
+        (let ((p (org-element-property prop ctx)))
+          (when (and p
+                     (<= (org-element-property :begin p) pos)
+                     (>= (org-element-property :end p) pos))
+            (setq ts p)))))
+    (when ts
+      (list
+       (org-element-property :raw-value ts)
+       (org-element-property :begin ts)
+       (org-element-property :end ts)))))
 
 ;;;###autoload
 (defun tzc-convert-time-at-mark (to-zone)
@@ -536,7 +540,8 @@ See `tzc-world-clock'."
 	 (shift (cond ((equal day-shift 1) "++1")
 		      ((equal day-shift -1) "--1")
 		      (t "++0")))
-	 (converted-date (org-read-date nil nil shift nil (org-time-string-to-time (format "%02d-%02d-%02d" year month day))))
+	 (converted-date (format-time-string "%Y-%m-%d"
+			  (org-read-date nil t shift nil (org-time-string-to-time (format "%04d-%02d-%02d" year month day)))))
 	 (start-bracket (cond ((string-match-p "<" timestamp) "<")
 			      ((string-match-p "\\[" timestamp) "[")
 			      (t "")))
