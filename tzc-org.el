@@ -4,7 +4,6 @@
 
 ;; Author: Md Arif Shaikh <arifshaikh.astro@gmail.com>
 ;; Homepage: https://github.com/md-arif-shaikh/tzc
-;; Package-Requires: ((emacs "28.1") (tzc "0.0.1"))
 ;; Keywords: convenience, timezone, org
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -33,22 +32,20 @@
 (defun tzc-org--get-planning-ts (schedule/deadline)
   "Get the timestamp for SCHEDULE/DEADLINE.
 Return org timestamp as (STRING BEGIN END)."
-  (let* ((pos (point))
-         (ctx (org-element-context))
+  (let* ((ctx (org-element-context))
          (ts (org-element-property schedule/deadline ctx)))
     (list
      (org-element-property :raw-value ts)
      (org-element-property :begin ts)
      (org-element-property :end ts))))
 
-(defun tzc-org--schedule-or-deadline (schedule/deadline &optional arg)
+(defun tzc-org--schedule-or-deadline (schedule/deadline)
   "SCHEDULE/DEADLINE with timezone conversion on the fly.
-SCHEDULE/DEADLINE can be `SCHEDULED' or `DEADLINE'.
-Takes optional ARG."
+SCHEDULE/DEADLINE can be `SCHEDULED' or `DEADLINE'."
   ;; Get date and time using org-read-date (which returns both date and time)
   (let* ((from-datetime (org-read-date nil t nil "Enter scheduled date and time: "))
 	 ;; Parse the datetime to get all components
-	 (org-time-stamp (org-format-time-string "<%Y-%m-%d %a %H:%M>" from-datetime))
+	 (org-time-stamp (format-time-string "<%Y-%m-%d %a %H:%M>" from-datetime))
 	 ;; Get from-zone
 	 (from-zone (completing-read "Enter From Zone: " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))))
 	 ;; Get to-zone
@@ -76,18 +73,18 @@ Takes optional ARG."
 Similar to `org-schedule', but prompts for timezone conversion.
 Prompts for date and time first, then asks for from-zone and to-zone,
 converts the time, and inserts the result with the to-zone in the timestamp.
-ARG is passed to `org-schedule' for interpreting the date input."
+Optional argument ARG."
   (interactive "P")
-  (tzc-org--schedule-or-deadline "SCHEDULED" arg))
+  (tzc-org--schedule-or-deadline "SCHEDULED"))
 
 (defun tzc-org-deadline (&optional arg)
   "Schedule an org item with timezone conversion.
 Similar to `org-deadline', but prompts for timezone conversion.
 Prompts for date and time first, then asks for from-zone and to-zone,
 converts the time, and inserts the result with the to-zone in the timestamp.
-ARG is passed to `org-deadline' for interpreting the date input."
+Optional argument ARG."
   (interactive "P")
-  (tzc-org--schedule-or-deadline "DEADLINE" arg))
+  (tzc-org--schedule-or-deadline "DEADLINE"))
 
 (provide 'tzc-org)
 ;;; tzc-org.el ends here
