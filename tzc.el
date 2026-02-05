@@ -540,7 +540,7 @@ See `tzc-world-clock'."
 	 (shift (cond ((equal day-shift 1) "++1")
 		      ((equal day-shift -1) "--1")
 		      (t "++0")))
-	 (converted-date (format-time-string "%Y-%m-%d"
+	 (converted-date (format-time-string "%F"
 			  (org-read-date nil t shift nil (org-time-string-to-time (format "%04d-%02d-%02d" year month day)))))
 	 (start-bracket (cond ((string-match-p "<" timestamp) "<")
 			      ((string-match-p "\\[" timestamp) "[")

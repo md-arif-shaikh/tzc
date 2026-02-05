@@ -29,6 +29,11 @@
 (require 'tzc)
 (require 'org-element)
 
+(defcustom tzc-org-local-timezone (format-time-string "%z" (current-time))
+  "Default local timezone or offset to use when converting org timestamp."
+  :type 'string
+  :group 'tzc)
+
 (defun tzc-org--get-planning-ts (schedule/deadline)
   "Get the timestamp for SCHEDULE/DEADLINE.
 Return org timestamp as (STRING BEGIN END)."
@@ -45,11 +50,15 @@ SCHEDULE/DEADLINE can be `SCHEDULED' or `DEADLINE'."
   ;; Get date and time using org-read-date (which returns both date and time)
   (let* ((from-datetime (org-read-date nil t nil "Enter scheduled date and time: "))
 	 ;; Parse the datetime to get all components
-	 (org-time-stamp (format-time-string "<%Y-%m-%d %a %H:%M>" from-datetime))
+	 (org-time-stamp (format-time-string "<%F %a %R>" from-datetime))
 	 ;; Get from-zone
-	 (from-zone (completing-read "Enter From Zone: " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))))
+	 (from-zone (completing-read (format "Enter a timezone or UTC offset (default %s): " tzc-org-local-timezone)
+				     (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))
+				     nil t nil nil tzc-org-local-timezone))
 	 ;; Get to-zone
-	 (to-zone (completing-read (format "Convert to zone: ") (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))))
+	 (to-zone (completing-read (format "Convert to timezone or UTC offset (default %s): " tzc-org-local-timezone)
+				     (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))
+				     nil t nil nil tzc-org-local-timezone))
 	 ;; Add zoneinfo to the time-stamp
 	 (org-time-stamp-with-zoneinfo (concat (string-replace ">" (concat " " from-zone) org-time-stamp) ">"))
 	 ;; Convert the time-stamp using tzc
@@ -77,6 +86,7 @@ Optional argument ARG."
   (interactive "P")
   (tzc-org--schedule-or-deadline "SCHEDULED"))
 
+;;;###autoload
 (defun tzc-org-deadline (&optional arg)
   "Schedule an org item with timezone conversion.
 Similar to `org-deadline', but prompts for timezone conversion.
