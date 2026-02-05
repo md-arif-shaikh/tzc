@@ -48,7 +48,7 @@ Return org timestamp as (STRING BEGIN END)."
   "SCHEDULE/DEADLINE with timezone conversion on the fly.
 SCHEDULE/DEADLINE can be `SCHEDULED' or `DEADLINE'."
   ;; Get date and time using org-read-date (which returns both date and time)
-  (let* ((from-datetime (org-read-date nil t nil "Enter scheduled date and time: "))
+  (let* ((from-datetime (org-read-date nil t nil (format "Enter %s date and time: " schedule/deadline)))
 	 ;; Parse the datetime to get all components
 	 (org-time-stamp (format-time-string "<%F %a %R>" from-datetime))
 	 ;; Get from-zone
