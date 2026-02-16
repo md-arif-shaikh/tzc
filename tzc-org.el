@@ -228,7 +228,7 @@ Optional argument DESCRIBE to use in the prompt."
    (let* ((timestamp (read-string "Enter timestamp to convert: "))
 	  (to-zone (completing-read (format "Convert %s to time zone:  " timestamp) (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
      (list timestamp to-zone)))
-  (let* ((from-zone-exists-p (plist-get (tzc--get-time-zone-from-timestamp timestamp t t) :tz))
+  (let* ((from-zone-exists-p (plist-get (tzc-org--get-time-zone-from-timestamp timestamp t t) :tz))
 	 (from-zone (if from-zone-exists-p
 			from-zone-exists-p
 		      (completing-read "No Time Zone info found in the timestamp. Enter Time Zone of the current timestamp in Area/City format:  " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
@@ -266,7 +266,7 @@ Optional argument FROM-ZONE to use when not found at point."
   (interactive
    (let* ((timestamp (or (car (tzc-org--get-timestamp-at-point))
                          (error "No org timestamp found at point!")))
-	  (tz-plist (tzc--get-time-zone-from-timestamp timestamp nil))
+	  (tz-plist (tzc-org--get-time-zone-from-timestamp timestamp nil))
 	  (from-zone (when (null tz-plist)
 		       (tzc--select-time-zone-with-preview-for-offset
 			(format "No time zone found in timestamp %s! Enter a time zone to convert from: " timestamp)))))
@@ -287,7 +287,7 @@ Optional argument FROM-ZONE to use when not found at point."
   (interactive
    (let* ((timestamp (or (car (tzc-org--get-timestamp-at-point))
                          (error "No org timestamp found at point!")))
-	  (tz-plist (tzc--get-time-zone-from-timestamp timestamp nil))
+	  (tz-plist (tzc-org--get-time-zone-from-timestamp timestamp nil))
 	  (from-zone (when (null tz-plist)
 		       (tzc--select-time-zone-with-preview-for-offset
 			(format "No time zone found in timestamp %s! Enter a time zone to convert from: " timestamp)))))
