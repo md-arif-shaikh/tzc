@@ -577,6 +577,16 @@ Optionally on a given FROM-DATE."
 	     (propertize to-zone-label 'face 'tzc-face-time-zone-label)
 	     (propertize to-zone-offset 'face 'tzc-face-offset-string))))
 
+;;;world clock for given time
+(defun tzc-world-clock-for-given-time ()
+"Get a `world-clock' for the given time."
+  (interactive)
+  ;;; remove existing world clock
+  (when (get-buffer tzc-world-clock-buffer-name)
+    (kill-buffer tzc-world-clock-buffer-name))
+  (let* ((time+date (org-read-date t t nil "Enter time+date: ")))
+    (tzc-world-clock time+date nil (format-time-string "%F" time+date))))
+
 (transient-define-prefix tzc ()
   "TZC operations for Org timestamp at point."
   [:description
@@ -590,7 +600,8 @@ Optionally on a given FROM-DATE."
     ("s" "time shift between time zones" tzc-get-time-shift-between-zones)]
 
    ["Inspect"
-    ("v" "View in world clock" tzc-world-clock)]
+    ("v" "View a time in world clock" tzc-world-clock-for-given-time)
+    ("w" "View current time in world clock" tzc-world-clock)]
 
    ["Quit"
     ("q" "Quit" transient-quit-one)]])
