@@ -147,10 +147,37 @@ An enhanced world clock view with navigation features. Use **`tzc-world-clock`**
   <img src="./screenshots/tzc-world-clock.gif" alt="World clock" width="600">
 </div>
 
-**Navigation**:
-- Press `n` for next hour
-- Press `p` for previous hour  
-- Press `g` to return to current time
+The buffer opens with a row of clickable buttons across the top:
+
+```
+[< prev] [now] [next >] [time...] [+ zone] [date: on] [offset: on] [save] [quit]
+
+Kolkata   09:00 Wed 02 September 2026 +0530 [x]
+New York  23:30 Tue 01 September 2026 -0400 [x]
+London    04:30 Wed 02 September 2026 +0100 [x]
+```
+
+Every button has a keyboard equivalent:
+
+| Key | Button | Action |
+|-----|--------|--------|
+| `n` | `[next >]` | Step forward one hour |
+| `p` | `[< prev]` | Step back one hour |
+| `.` | `[now]` | Return to the current time |
+| `t` | `[time...]` | Show another date and time |
+| `a` | `[+ zone]` | Add a time zone |
+| `k` | `[x]` | Remove the time zone on the current line |
+| `d` | `[date: …]` | Show or hide the full date |
+| `o` | `[offset: …]` | Show or hide the UTC offset |
+| `s` | `[save]` | Persist the current zones for future sessions |
+| `g` | | Redraw the buffer |
+| `q` | `[quit]` | Close the world clock |
+
+Adding and removing zones affects the current session only; `[save]` writes the
+list to `tzc-favourite-time-zones-alist` via Customize so it survives a restart.
+
+While the clock is showing the current time it refreshes itself every minute;
+set `tzc-world-clock-auto-update` to `nil` to turn that off.
 
 This view displays time information for all your configured zones, updated as you navigate through hours.
 
