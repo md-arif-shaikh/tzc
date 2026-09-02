@@ -64,14 +64,14 @@ Optionally ask for time zone when not found using ASK-FOR-TZ-WHEN-NIL."
     (when (and (null tz) ask-for-tz-when-nil)
       (setq tz (tzc--select-time-zone-with-preview-for-offset
 		(format "No time zone found in timestamp %s! Enter a time zone to convert from: " timestamp))))
-    (when check-time-zone
+    (when (and check-time-zone tz)
       (setq tz (cond ((string-match-p "\\`[A-Za-z]+/[A-Za-z_]+\\'" tz)
-		      (if (member tz tzc-time-zones)
+		      (if (member tz (tzc--time-zones))
 			  tz
-			(let* ((closest-tz (tzc--closest-string tz tzc-time-zones)))
+			(let* ((closest-tz (tzc--closest-string tz (tzc--time-zones))))
 			  (completing-read (format "%s is not a valid time zone.  Perhaps looking for %s?"
 						   tz closest-tz)
-					   tzc-time-zones nil t nil nil closest-tz))))
+					   (tzc--time-zones) nil t nil nil closest-tz))))
 		     (t tz)))
       (setq tz-plist (plist-put tz-plist :tz tz)))
     tz-plist))
@@ -97,9 +97,8 @@ Optionally ask for time zone when not found using ASK-FOR-TZ-WHEN-NIL."
       (save-excursion
         ;; If we are potentially on an external timezone
         (when (or (looking-at-p "[])]") ;; on closing bracket
-                  (looking-at-p "[A-Za-z0-9_+-/]") ;; on timezone char
-                  (looking-at-p "[ \t]") ;; on space
-                  (max (point-min) (1- (point))))
+                  (looking-at-p "[A-Za-z0-9_+/-]") ;; on timezone char
+                  (looking-at-p "[ \t]")) ;; on space
           ;; Search backward for "> ("
           (when (re-search-backward ">[ \t]*(" (line-beginning-position) t)
              (goto-char (match-beginning 0))
@@ -133,7 +132,7 @@ Optionally ask for time zone when not found using ASK-FOR-TZ-WHEN-NIL."
 (defun tzc-org-add-or-update-time-zone-in-timestamp-at-point (time-zone)
   "Add or update TIME-ZONE info for a timestamp at point."
   (interactive (list (tzc--select-time-zone-with-preview-for-offset)))
-  (let* ((ts-list (or (tzc--get-timestamp-at-point) (user-error "No timestamp found at point")))
+  (let* ((ts-list (or (tzc-org--get-timestamp-at-point) (user-error "No timestamp found at point")))
          (ts (nth 0 ts-list))
          (ts-begin (nth 1 ts-list))
          (ts-end (nth 2 ts-list))
@@ -226,12 +225,12 @@ Optional argument DESCRIBE to use in the prompt."
   "Convert TIMESTAMP to TO-ZONE."
   (interactive
    (let* ((timestamp (read-string "Enter timestamp to convert: "))
-	  (to-zone (completing-read (format "Convert %s to time zone:  " timestamp) (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
+	  (to-zone (completing-read (format "Convert %s to time zone:  " timestamp) (tzc--time-zones))))
      (list timestamp to-zone)))
   (let* ((from-zone-exists-p (plist-get (tzc-org--get-time-zone-from-timestamp timestamp t t) :tz))
 	 (from-zone (if from-zone-exists-p
 			from-zone-exists-p
-		      (completing-read "No Time Zone info found in the timestamp. Enter Time Zone of the current timestamp in Area/City format:  " (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones))))))
+		      (completing-read "No Time Zone info found in the timestamp. Enter Time Zone of the current timestamp in Area/City format:  " (tzc--time-zones))))
 	 (parsed-time (org-parse-time-string timestamp))
 	 (minute (nth 1 parsed-time))
 	 (hour (nth 2 parsed-time))
@@ -255,9 +254,15 @@ Optional argument DESCRIBE to use in the prompt."
 			    ((string-match-p "\\]" timestamp) "]")
 			    (t ""))))
     (setq converted-day (format-time-string "%a" (org-time-string-to-time converted-date)))
-    (message "%s%s %s %02d:%02d%s%s" start-bracket converted-date converted-day converted-hour converted-min
-	     end-bracket
-             (if from-zone-exists-p (concat " (" to-zone ")") "") )))
+    (let ((converted-timestamp
+	   (format "%s%s %s %02d:%02d%s%s" start-bracket converted-date converted-day
+		   converted-hour converted-min end-bracket
+		   (if from-zone-exists-p (concat " (" to-zone ")") ""))))
+      ;; Only report in the echo area when the user asked for it: this function
+      ;; is also called per candidate by the completion annotation functions.
+      (when (called-interactively-p 'interactive)
+	(message "%s" converted-timestamp))
+      converted-timestamp)))
 
 ;;;###autoload
 (defun tzc-org-convert-timestamp-at-point (to-zone &optional from-zone)
@@ -272,7 +277,7 @@ Optional argument FROM-ZONE to use when not found at point."
 			(format "No time zone found in timestamp %s! Enter a time zone to convert from: " timestamp)))))
      (when (null tz-plist)
        (setq timestamp (concat timestamp " (" from-zone ")")))
-     (list (tzc--select-time-zone-with-preview-for-timestamp
+     (list (tzc-org--select-time-zone-with-preview-for-timestamp
 	    timestamp
 	    (format "Convert current timestamp %s to time zone: " timestamp)) from-zone)))
   (let ((timestamp (car (tzc-org--get-timestamp-at-point))))
@@ -293,7 +298,7 @@ Optional argument FROM-ZONE to use when not found at point."
 			(format "No time zone found in timestamp %s! Enter a time zone to convert from: " timestamp)))))
      (when (null tz-plist)
        (setq timestamp (concat timestamp " (" from-zone ")")))
-     (list (tzc--select-time-zone-with-preview-for-timestamp
+     (list (tzc-org--select-time-zone-with-preview-for-timestamp
 	    timestamp
 	    (format "Convert current timestamp %s to time zone: " timestamp)) from-zone)))
   (let* ((timestamp-details (tzc-org--get-timestamp-at-point))
@@ -330,17 +335,17 @@ SCHEDULE-OR-DEADLINE can be SCHEDULED or DEADLINE."
 	 (org-timestamp (format-time-string "<%F %a %R>" from-datetime))
 	 ;; Get from-zone
 	 (from-zone (completing-read (format "Enter a time zone or UTC offset (default %s): " tzc-org-local-time-zone)
-				     (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))
+				     (tzc--time-zones)
 				     nil t nil nil tzc-org-local-time-zone))
 	 ;; Get to-zone
 	 (to-zone (completing-read (format "Convert %s from %s to time zone or UTC offset (default %s): "
 					   org-timestamp from-zone tzc-org-local-time-zone)
-				     (delete-dups (append (tzc--favourite-time-zones) (tzc--get-time-zones)))
+				     (tzc--time-zones)
 				     nil t nil nil tzc-org-local-time-zone))
 	 ;; Add zoneinfo to the timestamp
 	 (org-timestamp-with-zoneinfo (format "%s (%s)" org-timestamp from-zone))
 	 ;; Convert the timestamp using tzc
-	 (converted-timestamp (tzc-convert-org-timestamp org-timestamp-with-zoneinfo to-zone))
+	 (converted-timestamp (tzc-org-convert-timestamp org-timestamp-with-zoneinfo to-zone))
 	 (ts))
     
     (setq ts (cond ((string-equal schedule-or-deadline "SCHEDULED") (tzc-org--get-planning-ts :scheduled))
@@ -381,14 +386,14 @@ Optional argument ARG."
   ;;; remove existing world clock
   (when (get-buffer tzc-world-clock-buffer-name)
     (kill-buffer tzc-world-clock-buffer-name))
-  (let* ((timestamp (nth 0 (tzc--get-timestamp-at-point))))
+  (let* ((timestamp (nth 0 (tzc-org--get-timestamp-at-point))))
     (tzc-world-clock (org-time-string-to-time timestamp)
 		     (plist-get (tzc-org--get-time-zone-from-timestamp timestamp) :tz))))
 
 (transient-define-prefix tzc-org ()
   "TZC operations for Org timestamp at point."
   [:description
-   (lambda () (format "TZC: %s" (nth 0 (tzc--get-timestamp-at-point))))
+   (lambda () (format "TZC: %s" (nth 0 (tzc-org--get-timestamp-at-point))))
 
    ["Convert"
     ("c" "Convert (keep original)" tzc-org-convert-timestamp-at-point)
